@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Patient, Bed } from '$lib/api/client';
-	import { getBeds, searchPatients, createAdmission } from '$lib/api/client';
+	import { getBeds, searchPatients, createAdmission, getPatient } from '$lib/api/client';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 
@@ -8,6 +8,7 @@
 	let patients = $state<Patient[]>([]);
 	let selectedBedId = $state<number | null>(null);
 	let selectedPatientId = $state<string | null>(null);
+	let selectedPatient = $state<Patient | null>(null);
 	let searchQuery = $state('');
 	let loading = $state(false);
 	let loadingBeds = $state(true);
@@ -19,6 +20,29 @@
 		const patientParam = $page.url.searchParams.get('patient_id');
 		if (bedParam) selectedBedId = parseInt(bedParam);
 		if (patientParam) selectedPatientId = patientParam;
+	});
+
+	// Load patient details when selectedPatientId changes
+	$effect(() => {
+		if (selectedPatientId) {
+			if (selectedPatient?.id === selectedPatientId) return;
+
+			const found = patients.find(p => p.id === selectedPatientId);
+			if (found) {
+				selectedPatient = found;
+			} else {
+				getPatient(selectedPatientId)
+					.then(p => {
+						selectedPatient = p;
+					})
+					.catch(e => {
+						console.error('Error fetching patient:', e);
+						selectedPatient = null;
+					});
+			}
+		} else {
+			selectedPatient = null;
+		}
 	});
 
 	// Load available beds
@@ -107,7 +131,11 @@
 			<label for="patient-search">Paciente</label>
 			{#if selectedPatientId}
 				<div class="selected-patient">
-					<span>Paciente seleccionado: {selectedPatientId}</span>
+					{#if selectedPatient}
+						<span>Paciente seleccionado: {selectedPatient.full_name}</span>
+					{:else}
+						<span>Cargando datos del paciente...</span>
+					{/if}
 					<button type="button" class="btn-clear" onclick={() => { selectedPatientId = null; }}>
 						Cambiar
 					</button>
