@@ -36,7 +36,50 @@ export interface Admission {
 	bed_id: number;
 	status: 'active' | 'discharged';
 	event_type: string;
+	event_at: string | null;
+	next_control_at: string | null;
+	estimated_discharge_at: string | null;
 	created_at: string;
+	discharged_at: string | null;
+}
+
+export interface ClinicalLog {
+	id: number;
+	admission_id: string;
+	created_by: string | null;
+	created_at: string;
+	pa_systolic: number;
+	pa_diastolic: number;
+	heart_rate: number;
+	resp_rate: number;
+	temperature: number;
+	spo2: number;
+	pinard_status: boolean;
+	lochia_type: number;
+	lochia_amount: number;
+	lochia_odor: boolean;
+	has_clots: boolean;
+	notes: string | null;
+}
+
+export interface CreateClinicalLogInput {
+	pa_systolic: number;
+	pa_diastolic: number;
+	heart_rate: number;
+	resp_rate: number;
+	temperature: number;
+	spo2: number;
+	pinard_status: boolean;
+	lochia_type: number;
+	lochia_amount: number;
+	lochia_odor: boolean;
+	has_clots: boolean;
+	notes?: string;
+}
+
+export interface CreateClinicalLogResponse {
+	log: ClinicalLog;
+	next_control_at: string | null;
 }
 
 async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
@@ -117,4 +160,26 @@ export async function dischargeAdmission(admissionId: string): Promise<void> {
 	await fetchJSON(`/admissions/${admissionId}/discharge`, {
 		method: 'PUT'
 	});
+}
+
+export async function getAdmission(id: string): Promise<Admission> {
+	return fetchJSON<Admission>(`/admissions/${id}`);
+}
+
+export async function registerEvent(admissionId: string, eventType: 'parto' | 'cesarea'): Promise<Admission> {
+	return fetchJSON<Admission>(`/admissions/${admissionId}/event`, {
+		method: 'PUT',
+		body: JSON.stringify({ event_type: eventType })
+	});
+}
+
+export async function createClinicalLog(admissionId: string, input: CreateClinicalLogInput): Promise<CreateClinicalLogResponse> {
+	return fetchJSON<CreateClinicalLogResponse>(`/admissions/${admissionId}/clinical-logs`, {
+		method: 'POST',
+		body: JSON.stringify(input)
+	});
+}
+
+export async function listClinicalLogs(admissionId: string): Promise<ClinicalLog[]> {
+	return fetchJSON<ClinicalLog[]>(`/admissions/${admissionId}/clinical-logs`);
 }
