@@ -11,11 +11,8 @@
 	<a href="/" class:active={pathname === '/'}>
 		🏠 Camas
 	</a>
-	<a href="/patients/search" class:active={pathname.startsWith('/patients/search')}>
-		🔍 Buscar Pacientes
-	</a>
-	<a href="/patients/new" class:active={pathname.startsWith('/patients/new')}>
-		➕ Nuevo Paciente
+	<a href="/patients" class:active={pathname.startsWith('/patients')}>
+		👥 Pacientes
 	</a>
 </nav>
 

@@ -85,13 +85,13 @@
 	<form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
 		<!-- Bed Selection -->
 		<div class="field">
-			<label>Cama</label>
+			<label for="bed-select">Cama</label>
 			{#if loadingBeds}
 				<p>Cargando camas disponibles...</p>
 			{:else if beds.length === 0}
 				<p class="warning">No hay camas disponibles</p>
 			{:else}
-				<select bind:value={selectedBedId}>
+				<select id="bed-select" bind:value={selectedBedId}>
 					<option value={null}>Seleccionar cama...</option>
 					{#each beds as bed (bed.id)}
 						<option value={bed.id}>
@@ -104,7 +104,7 @@
 
 		<!-- Patient Selection -->
 		<div class="field">
-			<label>Paciente</label>
+			<label for="patient-search">Paciente</label>
 			{#if selectedPatientId}
 				<div class="selected-patient">
 					<span>Paciente seleccionado: {selectedPatientId}</span>
@@ -115,6 +115,7 @@
 			{:else}
 				<div class="patient-search">
 					<input
+						id="patient-search"
 						type="text"
 						placeholder="Buscar por DNI o nombre..."
 						bind:value={searchQuery}

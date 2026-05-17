@@ -22,6 +22,14 @@ export interface Patient {
 	obstetric_history: Record<string, unknown>;
 }
 
+export interface PaginatedResponse<T> {
+	data: T[];
+	total: number;
+	page: number;
+	limit: number;
+	total_pages: number;
+}
+
 export interface Admission {
 	id: string;
 	patient_id: string;
@@ -70,8 +78,28 @@ export async function createPatient(data: {
 	});
 }
 
+export async function listPatients(page: number = 1, limit: number = 10): Promise<PaginatedResponse<Patient>> {
+	return fetchJSON<PaginatedResponse<Patient>>(`/patients?page=${page}&limit=${limit}`);
+}
+
 export async function searchPatients(query: string): Promise<Patient[]> {
 	return fetchJSON<Patient[]>(`/patients/search?q=${encodeURIComponent(query)}`);
+}
+
+export async function getPatient(id: string): Promise<Patient> {
+	return fetchJSON<Patient>(`/patients/${id}`);
+}
+
+export async function updatePatient(id: string, data: {
+	identity_number: string;
+	full_name: string;
+	birth_date: string;
+	obstetric_history?: Record<string, unknown>;
+}): Promise<Patient> {
+	return fetchJSON<Patient>(`/patients/${id}`, {
+		method: 'PUT',
+		body: JSON.stringify(data)
+	});
 }
 
 // Admissions

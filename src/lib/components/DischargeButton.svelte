@@ -7,7 +7,8 @@
 	let error = $state<string | null>(null);
 	let confirmed = $state(false);
 
-	async function handleDischarge() {
+	async function handleDischarge(e: MouseEvent) {
+		e.stopPropagation();
 		if (!confirmed) {
 			confirmed = true;
 			return;
@@ -19,21 +20,24 @@
 		try {
 			await dischargeAdmission(admissionId);
 			onDischarged?.();
-		} catch (e) {
-			error = e instanceof Error ? e.message : 'Error al dar de alta';
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Error al dar de alta';
 			confirmed = false;
 		} finally {
 			loading = false;
 		}
 	}
 
-	function handleCancel() {
+	function handleCancel(e: MouseEvent) {
+		e.stopPropagation();
 		confirmed = false;
 		error = null;
 	}
 </script>
 
-<div class="discharge-container">
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<div class="discharge-container" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
 	{#if error}
 		<p class="error">{error}</p>
 	{/if}

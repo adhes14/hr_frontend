@@ -41,10 +41,14 @@
 	}
 </script>
 
-<button
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<div
 	class="bed-card"
 	style="border-color: {statusColor}"
 	onclick={handleClick}
+	role="button"
+	tabindex="0"
 >
 	<div class="bed-header">
 		<span class="bed-number">{bed.bed_type?.prefix}{bed.number}</span>
@@ -68,7 +72,7 @@
 			{/if}
 		</div>
 	{/if}
-</button>
+</div>
 
 <style>
 	.bed-card {
@@ -79,7 +83,9 @@
 		cursor: pointer;
 		transition: transform 0.2s, box-shadow 0.2s;
 		text-align: left;
-		width: 100%;
+		box-sizing: border-box;
+		max-width: 100%;
+		overflow: hidden;
 		font-size: 1rem;
 	}
 
