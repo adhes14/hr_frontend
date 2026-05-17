@@ -4,9 +4,15 @@
 
 	let {
 		admissionId,
+		eventType,
+		eventAt,
+		estimatedDischargeAt,
 		onregistered
 	}: {
 		admissionId: string;
+		eventType: string;
+		eventAt: string | null;
+		estimatedDischargeAt: string | null;
 		onregistered: (admission: Admission) => void;
 	} = $props();
 
@@ -14,9 +20,8 @@
 	let selectedEventType = $state<'parto' | 'cesarea' | null>(null);
 	let loading = $state(false);
 	let error = $state<string | null>(null);
-	let registeredEvent = $state<Admission | null>(null);
 
-	const eventRegistered = $derived(registeredEvent !== null);
+	const eventRegistered = $derived(eventType !== 'ninguno' && eventAt !== null);
 
 	function selectEventType(type: 'parto' | 'cesarea') {
 		selectedEventType = type;
@@ -36,7 +41,6 @@
 
 		try {
 			const admission = await registerEvent(admissionId, selectedEventType);
-			registeredEvent = admission;
 			showConfirm = false;
 			onregistered(admission);
 		} catch (e) {
@@ -113,13 +117,12 @@
 		{/if}
 	{:else}
 		<div class="event-registered">
-			<span class="event-badge" class:parto={registeredEvent?.event_type === 'parto'} class:cesarea={registeredEvent?.event_type === 'cesarea'}>
-				{registeredEvent?.event_type === 'parto' ? 'Parto Vaginal' : 'Cesárea'}
+			<span class="event-badge" class:parto={eventType === 'parto'} class:cesarea={eventType === 'cesarea'}>
+				{eventType === 'parto' ? 'Parto Vaginal' : 'Cesárea'}
 			</span>
 			<div class="event-details">
-				<p><strong>Fecha Evento:</strong> {formatDateTime(registeredEvent?.event_at ?? null)}</p>
-				<p><strong>Próximo Control:</strong> {formatDateTime(registeredEvent?.next_control_at ?? null)}</p>
-				<p><strong>Alta Estimada:</strong> {formatDateTime(registeredEvent?.estimated_discharge_at ?? null)}</p>
+				<p><strong>Fecha Evento:</strong> {formatDateTime(eventAt)}</p>
+				<p><strong>Alta Estimada:</strong> {formatDateTime(estimatedDischargeAt)}</p>
 			</div>
 		</div>
 	{/if}

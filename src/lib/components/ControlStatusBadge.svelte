@@ -1,78 +1,131 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 
 	let {
 		nextControlAt,
-		controlCount
+		controlCount,
+		requiresPostpartumFollowup
 	}: {
 		nextControlAt: string | null;
 		controlCount: number;
+		requiresPostpartumFollowup: boolean;
 	} = $props();
 
 	let now = $state(new Date());
+	let intervalId: ReturnType<typeof setInterval>;
 
-	// Update time every minute
+	// Update every second for smooth countdown
 	onMount(() => {
-		const interval = setInterval(() => {
+		intervalId = setInterval(() => {
 			now = new Date();
-		}, 60000);
+		}, 1000);
 
-		return () => clearInterval(interval);
+		return () => clearInterval(intervalId);
 	});
 
-	const timeRemaining = $derived(() => {
+	onDestroy(() => {
+		if (intervalId) clearInterval(intervalId);
+	});
+
+	const hasFollowupTracking = $derived(requiresPostpartumFollowup && nextControlAt !== null);
+	const isComplete = $derived(requiresPostpartumFollowup && nextControlAt === null && controlCount >= 8);
+
+	const timeRemaining = $derived.by(() => {
 		if (!nextControlAt) return null;
 		const controlTime = new Date(nextControlAt);
 		const diff = controlTime.getTime() - now.getTime();
-		return diff > 0 ? diff : 0;
+		return diff;
 	});
 
-	const isOverdue = $derived(nextControlAt !== null && new Date(nextControlAt) < now);
-	const isComplete = $derived(nextControlAt === null && controlCount >= 8);
+	const isOverdue = $derived(hasFollowupTracking && timeRemaining !== null && timeRemaining < 0);
 
-	const statusClass = $derived(() => {
+	const statusClass = $derived.by(() => {
 		if (isComplete) return 'complete';
 		if (isOverdue) return 'overdue';
-		const remaining = timeRemaining();
-		if (remaining !== null && remaining <= 5 * 60 * 1000) return 'warning';
+		if (timeRemaining !== null && timeRemaining <= 5 * 60 * 1000) return 'warning';
 		return 'normal';
 	});
 
-	const statusText = $derived(() => {
-		if (isComplete) return 'Vigilancia Completa';
-		if (isOverdue) return 'ATRASADO';
-		const remaining = timeRemaining();
-		if (remaining === null) return 'Sin control próximo';
-		if (remaining <= 0) return 'ATRASADO';
-		if (remaining < 60 * 60 * 1000) {
-			const minutes = Math.floor(remaining / 60000);
-			return `${minutes} min`;
+	function formatCountdown(ms: number): string {
+		const absMs = Math.abs(ms);
+		const hours = Math.floor(absMs / 3600000);
+		const minutes = Math.floor((absMs % 3600000) / 60000);
+		const seconds = Math.floor((absMs % 60000) / 1000);
+
+		if (hours > 0) {
+			return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 		}
-		const hours = Math.floor(remaining / 3600000);
-		const minutes = Math.floor((remaining % 3600000) / 60000);
-		return `${hours}h ${minutes.toString().padStart(2, '0')}m`;
+		return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+	}
+
+	function formatNextControl(dateStr: string): string {
+		const date = new Date(dateStr);
+		return date.toLocaleString('es-AR', {
+			hour: '2-digit',
+			minute: '2-digit',
+			second: '2-digit'
+		});
+	}
+
+	const statusText = $derived.by(() => {
+		if (!requiresPostpartumFollowup) return null;
+
+		if (isComplete) return { main: 'Vigilancia Completa', sub: null };
+
+		if (nextControlAt === null && controlCount === 0) {
+			return { main: 'Esperando primer control', sub: null };
+		}
+
+		if (isOverdue) {
+			return {
+				main: `ATRASADO ${formatCountdown(timeRemaining!)}`,
+				sub: `Era a las ${formatNextControl(nextControlAt!)}`
+			};
+		}
+
+		if (timeRemaining !== null) {
+			return {
+				main: formatCountdown(timeRemaining),
+				sub: `Próximo: ${formatNextControl(nextControlAt!)}`
+			};
+		}
+
+		return { main: 'Sin control próximo', sub: null };
 	});
 </script>
 
-<div class="control-status-badge {statusClass()}">
-	<span class="badge-text">{statusText()}</span>
-</div>
+{#if statusText}
+	<div class="control-status-badge {statusClass}">
+		<span class="badge-main">{statusText.main}</span>
+		{#if statusText.sub}
+			<span class="badge-sub">{statusText.sub}</span>
+		{/if}
+	</div>
+{/if}
 
 <style>
 	.control-status-badge {
-		display: inline-flex;
+		display: flex;
+		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		min-height: 44px;
+		min-height: 52px;
 		padding: 0.5rem 1rem;
 		border-radius: 20px;
-		font-size: 0.875rem;
-		font-weight: 600;
+		gap: 0.125rem;
 	}
 
-	.badge-text {
+	.badge-main {
+		font-size: 1rem;
+		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 0.5px;
+	}
+
+	.badge-sub {
+		font-size: 0.7rem;
+		font-weight: 500;
+		opacity: 0.9;
 	}
 
 	.complete {

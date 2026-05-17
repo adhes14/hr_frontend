@@ -7,14 +7,20 @@
 	const pathname = $derived($page.url.pathname);
 </script>
 
-<nav>
-	<a href="/" class:active={pathname === '/'}>
-		🏠 Camas
-	</a>
-	<a href="/patients" class:active={pathname.startsWith('/patients')}>
-		👥 Pacientes
-	</a>
-</nav>
+	<nav>
+		<a href="/" class:active={pathname === '/'}>
+			🏠 Camas
+		</a>
+		<a href="/patients" class:active={pathname.startsWith('/patients')}>
+			👥 Pacientes
+		</a>
+		<a href="/beds" class:active={pathname.startsWith('/beds')}>
+			🛏️ Gestión Camas
+		</a>
+		<a href="/bed-types" class:active={pathname.startsWith('/bed-types')}>
+			🏷️ Tipos de Cama
+		</a>
+	</nav>
 
 <main>
 	{@render children()}

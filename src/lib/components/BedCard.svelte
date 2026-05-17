@@ -5,7 +5,13 @@
 	import ControlStatusBadge from './ControlStatusBadge.svelte';
 	import { goto } from '$app/navigation';
 
-	let { bed, onclick, onDischarged }: { bed: Bed; onclick?: () => void; onDischarged?: () => void } = $props();
+	let { bed, onclick, onDischarged, onEdit, onDelete }: {
+		bed: Bed;
+		onclick?: () => void;
+		onDischarged?: () => void;
+		onEdit?: (bed: Bed) => void;
+		onDelete?: (bed: Bed) => void;
+	} = $props();
 
 	let patient = $state<Patient | null>(null);
 	let admission = $state<Admission | null>(null);
@@ -90,16 +96,30 @@
 			{:else if patient}
 				<p><strong>Paciente:</strong> {patient.full_name}</p>
 				<p><strong>DNI:</strong> {patient.identity_number}</p>
-<div class="actions-section">
-				<button type="button" class="btn-details" onclick={navigateToAdmission}>
-					Ver Detalles
-				</button>
-			</div>
+				<div class="bed-type-info">
+					<span class="bed-type-badge">{bed.bed_type?.name}</span>
+				</div>
+				<div class="actions-section">
+					<button type="button" class="btn-details" onclick={navigateToAdmission}>
+						Ver Detalles
+					</button>
+					{#if onEdit}
+						<button type="button" class="btn-edit" onclick={() => onEdit?.(bed)}>
+							Editar
+						</button>
+					{/if}
+					{#if onDelete}
+						<button type="button" class="btn-delete" onclick={() => onDelete?.(bed)}>
+							Eliminar
+						</button>
+					{/if}
+				</div>
 			{#if hasActiveMonitoring && admission}
 				<div class="monitoring-section">
 					<ControlStatusBadge
 						nextControlAt={admission.next_control_at}
 						controlCount={clinicalLogs.length}
+						requiresPostpartumFollowup={bed.bed_type?.requires_postpartum_followup ?? false}
 					/>
 				</div>
 			{/if}
@@ -186,5 +206,48 @@
 
 	.btn-details:hover {
 		background: #2980b9;
+	}
+
+	.btn-edit {
+		background: #f39c12;
+		color: white;
+		border: none;
+		padding: 0.5rem 1rem;
+		border-radius: 6px;
+		font-size: 0.875rem;
+		cursor: pointer;
+		transition: background 0.2s;
+	}
+
+	.btn-edit:hover {
+		background: #d68910;
+	}
+
+	.btn-delete {
+		background: #e74c3c;
+		color: white;
+		border: none;
+		padding: 0.5rem 1rem;
+		border-radius: 6px;
+		font-size: 0.875rem;
+		cursor: pointer;
+		transition: background 0.2s;
+	}
+
+	.btn-delete:hover {
+		background: #c0392b;
+	}
+
+	.bed-type-info {
+		margin: 0.5rem 0;
+	}
+
+	.bed-type-badge {
+		background: #9b59b6;
+		color: white;
+		padding: 0.25rem 0.75rem;
+		border-radius: 12px;
+		font-size: 0.75rem;
+		font-weight: 500;
 	}
 </style>

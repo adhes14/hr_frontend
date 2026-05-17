@@ -4,6 +4,7 @@ export interface BedType {
 	id: number;
 	name: string;
 	prefix: string;
+	requires_postpartum_followup: boolean;
 }
 
 export interface Bed {
@@ -99,9 +100,77 @@ async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
 	return response.json();
 }
 
+// Bed Types
+export async function getBedTypes(): Promise<BedType[]> {
+	return fetchJSON<BedType[]>('/bed-types');
+}
+
+export async function getBedType(id: number): Promise<BedType> {
+	return fetchJSON<BedType>(`/bed-types/${id}`);
+}
+
+export async function createBedType(data: {
+	name: string;
+	prefix: string;
+	requires_postpartum_followup: boolean;
+}): Promise<BedType> {
+	return fetchJSON<BedType>('/bed-types', {
+		method: 'POST',
+		body: JSON.stringify(data)
+	});
+}
+
+export async function updateBedType(id: number, data: {
+	name?: string;
+	prefix?: string;
+	requires_postpartum_followup?: boolean;
+}): Promise<BedType> {
+	return fetchJSON<BedType>(`/bed-types/${id}`, {
+		method: 'PUT',
+		body: JSON.stringify(data)
+	});
+}
+
+export async function deleteBedType(id: number): Promise<void> {
+	await fetchJSON(`/bed-types/${id}`, {
+		method: 'DELETE'
+	});
+}
+
 // Beds
 export async function getBeds(): Promise<Bed[]> {
 	return fetchJSON<Bed[]>('/beds');
+}
+
+export async function getBed(id: number): Promise<Bed> {
+	return fetchJSON<Bed>(`/beds/${id}`);
+}
+
+export async function createBed(data: {
+	number: number;
+	bed_type_id: number;
+	is_active?: boolean;
+}): Promise<Bed> {
+	return fetchJSON<Bed>('/beds', {
+		method: 'POST',
+		body: JSON.stringify(data)
+	});
+}
+
+export async function updateBed(id: number, data: {
+	number?: number;
+	bed_type_id?: number;
+}): Promise<Bed> {
+	return fetchJSON<Bed>(`/beds/${id}`, {
+		method: 'PUT',
+		body: JSON.stringify(data)
+	});
+}
+
+export async function deleteBed(id: number): Promise<void> {
+	await fetchJSON(`/beds/${id}`, {
+		method: 'DELETE'
+	});
 }
 
 export async function getBedPatient(bedId: number): Promise<Patient> {

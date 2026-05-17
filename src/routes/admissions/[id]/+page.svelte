@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { getAdmission, getBedPatient, listClinicalLogs } from '$lib/api/client';
-	import type { Admission, Patient, ClinicalLog } from '$lib/api/client';
+	import { getAdmission, getBedPatient, getBed, listClinicalLogs } from '$lib/api/client';
+	import type { Admission, Patient, Bed, ClinicalLog } from '$lib/api/client';
 	import EventTypeSelector from '$lib/components/EventTypeSelector.svelte';
 	import ControlStatusBadge from '$lib/components/ControlStatusBadge.svelte';
 	import DischargeButton from '$lib/components/DischargeButton.svelte';
@@ -11,6 +11,7 @@
 
 	let admission = $state<Admission | null>(null);
 	let patient = $state<Patient | null>(null);
+	let bed = $state<Bed | null>(null);
 	let clinicalLogs = $state<ClinicalLog[]>([]);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
@@ -36,9 +37,14 @@
 
 			if (admission?.bed_id) {
 				try {
-					patient = await getBedPatient(admission.bed_id);
+					const [patientData, bedData] = await Promise.all([
+						getBedPatient(admission.bed_id),
+						getBed(admission.bed_id)
+					]);
+					patient = patientData;
+					bed = bedData;
 				} catch (e) {
-					console.error('Error loading patient:', e);
+					console.error('Error loading patient/bed:', e);
 				}
 			}
 		} catch (e) {
@@ -114,29 +120,37 @@
 				</section>
 			{/if}
 
-			<!-- Event Section -->
+		<!-- Event Section - only for beds that require postpartum follow-up -->
+		{#if bed?.bed_type?.requires_postpartum_followup}
 			<section class="section">
 				<EventTypeSelector
 					{admissionId}
+					eventType={admission.event_type}
+					eventAt={admission.event_at}
+					estimatedDischargeAt={admission.estimated_discharge_at}
 					onregistered={handleEventRegistered}
 				/>
 			</section>
+		{/if}
 
-			<!-- Control Status -->
-			{#if admission.status === 'active' && (admission.next_control_at || clinicalLogs.length > 0)}
-				<section class="section control-section">
-					<h2>Estado de Vigilancia</h2>
-					<div class="control-info">
+		<!-- Control Status -->
+		{#if admission.status === 'active' && bed?.bed_type?.requires_postpartum_followup}
+			<section class="section control-section">
+				<h2>Estado de Vigilancia</h2>
+				<div class="control-info">
+					{#if admission.next_control_at || clinicalLogs.length > 0}
 						<ControlStatusBadge
 							nextControlAt={admission.next_control_at}
 							controlCount={clinicalLogs.length}
+							requiresPostpartumFollowup={bed?.bed_type?.requires_postpartum_followup ?? false}
 						/>
-						<button type="button" class="btn-control" onclick={navigateToClinicalLog}>
-							Registrar Control
-						</button>
-					</div>
-				</section>
-			{/if}
+					{/if}
+					<button type="button" class="btn-control" onclick={navigateToClinicalLog}>
+						Registrar Control
+					</button>
+				</div>
+			</section>
+		{/if}
 
 			<!-- Clinical Logs History -->
 			<section class="section">
