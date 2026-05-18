@@ -2,7 +2,7 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import type { Snippet } from 'svelte';
-	import { restoreSession, isAuthenticated, isAdmin, currentUser, clearSession } from '$lib/auth';
+	import { restoreSession, currentUser, token, clearSession } from '$lib/auth';
 	import { goto } from '$app/navigation';
 
 	let { children }: { children: Snippet } = $props();
@@ -16,7 +16,7 @@
 	});
 
 	$effect(() => {
-		if (authChecked && !isAuthenticated() && pathname !== '/login') {
+		if (authChecked && !$token && pathname !== '/login') {
 			goto('/login');
 		}
 	});
@@ -28,7 +28,7 @@
 </script>
 
 {#if authChecked}
-	{#if isAuthenticated() && pathname !== '/login'}
+	{#if $token && pathname !== '/login'}
 		<nav>
 			<div class="nav-links">
 				<a href="/" class:active={pathname === '/'}>
@@ -37,7 +37,7 @@
 				<a href="/patients" class:active={pathname.startsWith('/patients')}>
 					👥 Pacientes
 				</a>
-				{#if isAdmin()}
+				{#if $currentUser?.role === 'admin'}
 					<a href="/beds" class:active={pathname.startsWith('/beds')}>
 						🛏️ Gestión Camas
 					</a>
