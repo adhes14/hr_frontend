@@ -126,7 +126,8 @@ async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
 		throw new Error(error.error || `HTTP ${response.status}`);
 	}
 
-	return response.json();
+	const text = await response.text();
+	return text ? JSON.parse(text) : {} as T;
 }
 
 // Bed Types
