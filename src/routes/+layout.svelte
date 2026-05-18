@@ -1,30 +1,65 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { onMount } from 'svelte';
 	import type { Snippet } from 'svelte';
+	import { restoreSession, isAuthenticated, isAdmin, currentUser, clearSession } from '$lib/auth';
+	import { goto } from '$app/navigation';
 
 	let { children }: { children: Snippet } = $props();
 
 	const pathname = $derived($page.url.pathname);
+	let authChecked = $state(false);
+
+	onMount(() => {
+		restoreSession();
+		authChecked = true;
+	});
+
+	$effect(() => {
+		if (authChecked && !isAuthenticated() && pathname !== '/login') {
+			goto('/login');
+		}
+	});
+
+	function handleLogout() {
+		clearSession();
+		goto('/login');
+	}
 </script>
 
-	<nav>
-		<a href="/" class:active={pathname === '/'}>
-			🏠 Camas
-		</a>
-		<a href="/patients" class:active={pathname.startsWith('/patients')}>
-			👥 Pacientes
-		</a>
-		<a href="/beds" class:active={pathname.startsWith('/beds')}>
-			🛏️ Gestión Camas
-		</a>
-		<a href="/bed-types" class:active={pathname.startsWith('/bed-types')}>
-			🏷️ Tipos de Cama
-		</a>
-	</nav>
+{#if authChecked}
+	{#if isAuthenticated() && pathname !== '/login'}
+		<nav>
+			<div class="nav-links">
+				<a href="/" class:active={pathname === '/'}>
+					🏠 Camas
+				</a>
+				<a href="/patients" class:active={pathname.startsWith('/patients')}>
+					👥 Pacientes
+				</a>
+				{#if isAdmin()}
+					<a href="/beds" class:active={pathname.startsWith('/beds')}>
+						🛏️ Gestión Camas
+					</a>
+					<a href="/bed-types" class:active={pathname.startsWith('/bed-types')}>
+						🏷️ Tipos de Cama
+					</a>
+					<a href="/users" class:active={pathname.startsWith('/users')}>
+						👤 Usuarios
+					</a>
+				{/if}
+			</div>
+			<div class="user-info">
+				<span class="username">👤 {$currentUser?.full_name}</span>
+				<button class="logout-btn" onclick={handleLogout}>Salir</button>
+			</div>
+		</nav>
+	{/if}
 
-<main>
-	{@render children()}
-</main>
+	<main>
+		{@render children()}
+	</main>
+{/if}
 
 <style>
 	:global(body) {
@@ -37,8 +72,14 @@
 		background: #1a1a2e;
 		padding: 1rem;
 		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.nav-links {
+		display: flex;
 		gap: 1rem;
-		justify-content: center;
+		flex-wrap: wrap;
 	}
 
 	nav a {
@@ -52,6 +93,32 @@
 	nav a:hover,
 	nav a.active {
 		background: rgba(255, 255, 255, 0.2);
+	}
+
+	.user-info {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+	}
+
+	.username {
+		color: #e0e0e0;
+		font-size: 0.9rem;
+	}
+
+	.logout-btn {
+		background: rgba(255, 60, 60, 0.2);
+		color: #ffcccc;
+		border: 1px solid rgba(255, 60, 60, 0.5);
+		padding: 0.4rem 0.8rem;
+		border-radius: 6px;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.logout-btn:hover {
+		background: rgba(255, 60, 60, 0.4);
+		color: white;
 	}
 
 	main {

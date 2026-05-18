@@ -1,4 +1,12 @@
-const BASE_URL = '/api/v1';
+const PUBLIC_API_URL = import.meta.env?.VITE_PUBLIC_API_URL || '/api/v1';
+
+export interface Staff {
+	id: string;
+	full_name: string;
+	role: 'health_staff' | 'admin';
+	username: string;
+	is_active: boolean;
+}
 
 export interface BedType {
 	id: number;
@@ -49,6 +57,7 @@ export interface ClinicalLog {
 	id: number;
 	admission_id: string;
 	created_by: string | null;
+	created_by_name: string | null;
 	created_at: string;
 	pa_systolic: number;
 	pa_diastolic: number;
@@ -85,13 +94,32 @@ export interface CreateClinicalLogResponse {
 }
 
 async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
-	const response = await fetch(`${BASE_URL}${url}`, {
+	const headers: Record<string, string> = {
+		'Content-Type': 'application/json',
+	};
+
+	if (typeof window !== 'undefined') {
+		const token = localStorage.getItem('token');
+		if (token) {
+			headers['Authorization'] = `Bearer ${token}`;
+		}
+	}
+
+	const response = await fetch(`${PUBLIC_API_URL}${url}`, {
 		...options,
 		headers: {
-			'Content-Type': 'application/json',
+			...headers,
 			...options?.headers
 		}
 	});
+
+	if (response.status === 401) {
+		if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+			localStorage.removeItem('token');
+			localStorage.removeItem('user');
+			window.location.href = '/login';
+		}
+	}
 
 	if (!response.ok) {
 		const error = await response.json().catch(() => ({ error: 'Unknown error' }));
@@ -252,4 +280,35 @@ export async function createClinicalLog(admissionId: string, input: CreateClinic
 
 export async function listClinicalLogs(admissionId: string): Promise<ClinicalLog[]> {
 	return fetchJSON<ClinicalLog[]>(`/admissions/${admissionId}/clinical-logs`);
+}
+
+// Users (Admin only)
+export async function listUsers(): Promise<Staff[]> {
+	return fetchJSON<Staff[]>('/users');
+}
+
+export async function createUser(data: {
+	username: string;
+	full_name: string;
+	role: 'health_staff' | 'admin';
+	password?: string;
+}): Promise<void> {
+	await fetchJSON('/users', {
+		method: 'POST',
+		body: JSON.stringify(data)
+	});
+}
+
+export async function changePassword(id: string, password: string): Promise<void> {
+	await fetchJSON(`/users/${id}/password`, {
+		method: 'PUT',
+		body: JSON.stringify({ password })
+	});
+}
+
+export async function setUserActive(id: string, is_active: boolean): Promise<void> {
+	await fetchJSON(`/users/${id}/active`, {
+		method: 'PUT',
+		body: JSON.stringify({ is_active })
+	});
 }

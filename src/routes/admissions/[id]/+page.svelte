@@ -163,6 +163,9 @@
 							<div class="log-entry">
 								<div class="log-header">
 									<span class="log-time">{formatDateTime(log.created_at)}</span>
+									{#if log.created_by_name}
+										<span class="log-author">por {log.created_by_name}</span>
+									{/if}
 								</div>
 								<div class="log-vitals">
 									<span title="PA Sistólica">{formatVital(log.pa_systolic, 'mmHg')}</span>
@@ -353,6 +356,13 @@
 	.log-time {
 		font-size: 0.75rem;
 		color: #666;
+	}
+
+	.log-author {
+		font-size: 0.75rem;
+		color: #888;
+		font-style: italic;
+		margin-left: 0.5rem;
 	}
 
 	.log-vitals {
