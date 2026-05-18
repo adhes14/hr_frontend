@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { createClinicalLog } from '$lib/api/client';
-	import type { CreateClinicalLogInput } from '$lib/api/client';
-	import VitalSelector from './VitalSelector.svelte';
+	import { createClinicalLog } from "$lib/api/client";
+	import type { CreateClinicalLogInput } from "$lib/api/client";
+	import VitalSelector from "./VitalSelector.svelte";
 
 	let {
 		admissionId,
-		onsuccess
+		onsuccess,
 	}: {
 		admissionId: string;
 		onsuccess: (nextControlAt: string | null) => void;
@@ -27,7 +27,7 @@
 	let hasClots = $state<boolean | null>(null);
 
 	// Notes
-	let notes = $state('');
+	let notes = $state("");
 
 	// Form state
 	let loading = $state(false);
@@ -35,10 +35,10 @@
 
 	const isValid = $derived(
 		pinardStatus !== null &&
-		lochiaType !== null &&
-		lochiaAmount !== null &&
-		lochiaOdor !== null &&
-		hasClots !== null
+			lochiaType !== null &&
+			lochiaAmount !== null &&
+			lochiaOdor !== null &&
+			hasClots !== null,
 	);
 
 	const charsRemaining = $derived(500 - notes.length);
@@ -61,21 +61,28 @@
 			lochia_amount: lochiaAmount!,
 			lochia_odor: lochiaOdor!,
 			has_clots: hasClots!,
-			notes: notes.trim() || undefined
+			notes: notes.trim() || undefined,
 		};
 
 		try {
 			const response = await createClinicalLog(admissionId, input);
 			onsuccess(response.next_control_at);
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Error al registrar control';
+			error =
+				e instanceof Error ? e.message : "Error al registrar control";
 		} finally {
 			loading = false;
 		}
 	}
 </script>
 
-<form class="clinical-log-form" onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+<form
+	class="clinical-log-form"
+	onsubmit={(e) => {
+		e.preventDefault();
+		handleSubmit();
+	}}
+>
 	{#if error}
 		<div class="error-banner">{error}</div>
 	{/if}
@@ -91,7 +98,7 @@
 				max={300}
 				step={5}
 				unit="mmHg"
-				onchange={(v) => paSystolic = v}
+				onchange={(v) => (paSystolic = v)}
 			/>
 			<VitalSelector
 				label="PA Diastólica"
@@ -100,7 +107,7 @@
 				max={200}
 				step={5}
 				unit="mmHg"
-				onchange={(v) => paDiastolic = v}
+				onchange={(v) => (paDiastolic = v)}
 			/>
 			<VitalSelector
 				label="Frecuencia Cardíaca"
@@ -109,7 +116,7 @@
 				max={250}
 				step={1}
 				unit="bpm"
-				onchange={(v) => heartRate = v}
+				onchange={(v) => (heartRate = v)}
 			/>
 			<VitalSelector
 				label="Frecuencia Respiratoria"
@@ -118,7 +125,7 @@
 				max={60}
 				step={1}
 				unit="rpm"
-				onchange={(v) => respRate = v}
+				onchange={(v) => (respRate = v)}
 			/>
 			<VitalSelector
 				label="Temperatura"
@@ -127,7 +134,7 @@
 				max={45}
 				step={0.1}
 				unit="°C"
-				onchange={(v) => temperature = v}
+				onchange={(v) => (temperature = v)}
 			/>
 			<VitalSelector
 				label="SpO2"
@@ -136,7 +143,7 @@
 				max={100}
 				step={1}
 				unit="%"
-				onchange={(v) => spo2 = v}
+				onchange={(v) => (spo2 = v)}
 			/>
 		</div>
 	</section>
@@ -152,7 +159,7 @@
 					type="button"
 					class="toggle-btn"
 					class:active={pinardStatus === true}
-					onclick={() => pinardStatus = true}
+					onclick={() => (pinardStatus = true)}
 				>
 					Satisfactorio
 				</button>
@@ -160,7 +167,7 @@
 					type="button"
 					class="toggle-btn"
 					class:active={pinardStatus === false}
-					onclick={() => pinardStatus = false}
+					onclick={() => (pinardStatus = false)}
 				>
 					No Satisfactorio
 				</button>
@@ -174,15 +181,15 @@
 					type="button"
 					class="toggle-btn"
 					class:active={lochiaType === 1}
-					onclick={() => lochiaType = 1}
+					onclick={() => (lochiaType = 1)}
 				>
-					Rubra
+					Hemático
 				</button>
 				<button
 					type="button"
 					class="toggle-btn"
 					class:active={lochiaType === 2}
-					onclick={() => lochiaType = 2}
+					onclick={() => (lochiaType = 2)}
 				>
 					Serosa
 				</button>
@@ -190,7 +197,7 @@
 					type="button"
 					class="toggle-btn"
 					class:active={lochiaType === 3}
-					onclick={() => lochiaType = 3}
+					onclick={() => (lochiaType = 3)}
 				>
 					Alba
 				</button>
@@ -204,7 +211,7 @@
 					type="button"
 					class="toggle-btn"
 					class:active={lochiaAmount === 1}
-					onclick={() => lochiaAmount = 1}
+					onclick={() => (lochiaAmount = 1)}
 				>
 					Escaso
 				</button>
@@ -212,7 +219,7 @@
 					type="button"
 					class="toggle-btn"
 					class:active={lochiaAmount === 2}
-					onclick={() => lochiaAmount = 2}
+					onclick={() => (lochiaAmount = 2)}
 				>
 					Moderado
 				</button>
@@ -220,7 +227,7 @@
 					type="button"
 					class="toggle-btn"
 					class:active={lochiaAmount === 3}
-					onclick={() => lochiaAmount = 3}
+					onclick={() => (lochiaAmount = 3)}
 				>
 					Abundante
 				</button>
@@ -234,7 +241,7 @@
 					type="button"
 					class="toggle-btn"
 					class:active={lochiaOdor === true}
-					onclick={() => lochiaOdor = true}
+					onclick={() => (lochiaOdor = true)}
 				>
 					Normal
 				</button>
@@ -242,7 +249,7 @@
 					type="button"
 					class="toggle-btn"
 					class:active={lochiaOdor === false}
-					onclick={() => lochiaOdor = false}
+					onclick={() => (lochiaOdor = false)}
 				>
 					Fétido
 				</button>
@@ -256,7 +263,7 @@
 					type="button"
 					class="toggle-btn"
 					class:active={hasClots === false}
-					onclick={() => hasClots = false}
+					onclick={() => (hasClots = false)}
 				>
 					No
 				</button>
@@ -264,7 +271,7 @@
 					type="button"
 					class="toggle-btn"
 					class:active={hasClots === true}
-					onclick={() => hasClots = true}
+					onclick={() => (hasClots = true)}
 				>
 					Sí
 				</button>
@@ -282,13 +289,15 @@
 				placeholder="Observaciones adicionales..."
 				rows={3}
 			></textarea>
-			<span class="char-counter">{charsRemaining} caracteres restantes</span>
+			<span class="char-counter"
+				>{charsRemaining} caracteres restantes</span
+			>
 		</div>
 	</section>
 
 	<div class="submit-area">
 		<button type="submit" class="btn-submit" disabled={!isValid || loading}>
-			{loading ? 'Guardando...' : 'Registrar Control'}
+			{loading ? "Guardando..." : "Registrar Control"}
 		</button>
 	</div>
 </form>

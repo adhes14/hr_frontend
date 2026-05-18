@@ -25,10 +25,6 @@
 		goto(`/admissions/new?bed_id=${bed.id}`);
 	}
 
-	function handleBedDischarged() {
-		loadBeds();
-	}
-
 	onMount(() => {
 		loadBeds();
 	});
@@ -54,7 +50,7 @@
 	{:else}
 		<div class="beds-grid">
 			{#each beds as bed (bed.id)}
-				<BedCard {bed} onclick={() => handleBedClick(bed)} onDischarged={handleBedDischarged} />
+				<BedCard {bed} onclick={() => handleBedClick(bed)} />
 			{/each}
 		</div>
 	{/if}

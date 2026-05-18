@@ -124,10 +124,10 @@
 		{#if bed?.bed_type?.requires_postpartum_followup}
 			<section class="section">
 				<EventTypeSelector
-					{admissionId}
-					eventType={admission.event_type}
-					eventAt={admission.event_at}
-					estimatedDischargeAt={admission.estimated_discharge_at}
+					admissionId={admission!.id}
+					eventType={admission!.event_type}
+					eventAt={admission!.event_at}
+					estimatedDischargeAt={admission!.estimated_discharge_at}
 					onregistered={handleEventRegistered}
 				/>
 			</section>
@@ -178,7 +178,7 @@
 									{:else}
 										<span class="badge warning">Pinard No Satisfactorio</span>
 									{/if}
-									<span>Loquios: {['-', 'Rubra', 'Serosa', 'Alba'][log.lochia_type]}</span>
+									<span>Loquios: {['-', 'Hemático', 'Serosa', 'Alba'][log.lochia_type]}</span>
 									<span>Cantidad: {['-', 'Escaso', 'Moderado', 'Abundante'][log.lochia_amount]}</span>
 									{#if !log.lochia_odor}
 										<span class="badge warning">Loquios Fétidos</span>
@@ -199,7 +199,7 @@
 			<!-- Discharge Section -->
 			{#if admission.status === 'active'}
 				<section class="section discharge-section">
-					<DischargeButton admissionId={admissionId} onDischarged={handleDischarged} />
+					<DischargeButton admissionId={admission!.id} onDischarged={handleDischarged} />
 				</section>
 			{/if}
 		</div>
