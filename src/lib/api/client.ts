@@ -12,6 +12,7 @@ export interface Bed {
 	bed_type: BedType;
 	number: number;
 	current_admission_id: string | null;
+	current_patient_name?: string;
 	is_active: boolean;
 }
 

@@ -1,74 +1,21 @@
 <script lang="ts">
-	import type { Bed, Patient, Admission, ClinicalLog } from '$lib/api/client';
-	import { getBedPatient, getAdmission, listClinicalLogs } from '$lib/api/client';
-	import DischargeButton from './DischargeButton.svelte';
-	import ControlStatusBadge from './ControlStatusBadge.svelte';
+	import type { Bed } from '$lib/api/client';
 	import { goto } from '$app/navigation';
 
-	let { bed, onclick, onDischarged, onEdit, onDelete }: {
+	let { bed, onclick }: {
 		bed: Bed;
 		onclick?: () => void;
-		onDischarged?: () => void;
-		onEdit?: (bed: Bed) => void;
-		onDelete?: (bed: Bed) => void;
 	} = $props();
-
-	let patient = $state<Patient | null>(null);
-	let admission = $state<Admission | null>(null);
-	let clinicalLogs = $state<ClinicalLog[]>([]);
-	let loading = $state(false);
-	let showPatient = $state(false);
 
 	const isOccupied = $derived(bed.current_admission_id !== null);
 	const statusColor = $derived(isOccupied ? '#e74c3c' : '#2ecc71');
 	const statusText = $derived(isOccupied ? 'Ocupada' : 'Disponible');
-	const hasActiveMonitoring = $derived(admission !== null && (admission.next_control_at !== null || clinicalLogs.length > 0));
-
-	async function loadPatient() {
-		if (!isOccupied || patient) return;
-		loading = true;
-		try {
-			patient = await getBedPatient(bed.id);
-		} catch (e) {
-			console.error('Error loading patient:', e);
-		} finally {
-			loading = false;
-		}
-	}
-
-	async function loadAdmissionData() {
-		if (!bed.current_admission_id || admission) return;
-		try {
-			const [admissionData, logsData] = await Promise.all([
-				getAdmission(bed.current_admission_id),
-				listClinicalLogs(bed.current_admission_id)
-			]);
-			admission = admissionData;
-			clinicalLogs = logsData;
-		} catch (e) {
-			console.error('Error loading admission data:', e);
-		}
-	}
 
 	function handleClick() {
 		if (isOccupied) {
-			showPatient = !showPatient;
-			if (showPatient && !patient) {
-				loadPatient();
-				loadAdmissionData();
-			}
+			goto(`/admissions/${bed.current_admission_id}`);
 		} else {
 			onclick?.();
-		}
-	}
-
-	function handleDischarged() {
-		onDischarged?.();
-	}
-
-	function navigateToAdmission() {
-		if (bed.current_admission_id) {
-			goto(`/admissions/${bed.current_admission_id}`);
 		}
 	}
 </script>
@@ -89,48 +36,18 @@
 		</span>
 	</div>
 
-	{#if showPatient && isOccupied}
-		<div class="patient-info">
-			{#if loading}
-				<p>Cargando paciente...</p>
-			{:else if patient}
-				<p><strong>Paciente:</strong> {patient.full_name}</p>
-				<p><strong>DNI:</strong> {patient.identity_number}</p>
-				<div class="bed-type-info">
-					<span class="bed-type-badge">{bed.bed_type?.name}</span>
-				</div>
-				<div class="actions-section">
-					<button type="button" class="btn-details" onclick={navigateToAdmission}>
-						Ver Detalles
-					</button>
-					{#if onEdit}
-						<button type="button" class="btn-edit" onclick={() => onEdit?.(bed)}>
-							Editar
-						</button>
-					{/if}
-					{#if onDelete}
-						<button type="button" class="btn-delete" onclick={() => onDelete?.(bed)}>
-							Eliminar
-						</button>
-					{/if}
-				</div>
-			{#if hasActiveMonitoring && admission}
-				<div class="monitoring-section">
-					<ControlStatusBadge
-						nextControlAt={admission.next_control_at}
-						controlCount={clinicalLogs.length}
-						requiresPostpartumFollowup={bed.bed_type?.requires_postpartum_followup ?? false}
-					/>
-				</div>
-			{/if}
-			{#if bed.current_admission_id}
-				<DischargeButton admissionId={bed.current_admission_id} onDischarged={handleDischarged} />
-			{/if}
-			{:else}
-				<p>Error al cargar paciente</p>
-			{/if}
+	<div class="bed-body">
+		{#if isOccupied}
+			<div class="patient-info">
+				<p class="patient-name">
+					<strong>Paciente:</strong> {bed.current_patient_name || 'Desconocido'}
+				</p>
+			</div>
+		{/if}
+		<div class="bed-type-info">
+			<span class="bed-type-badge">{bed.bed_type?.name}</span>
 		</div>
-	{/if}
+	</div>
 </div>
 
 <style>
@@ -146,6 +63,9 @@
 		max-width: 100%;
 		overflow: hidden;
 		font-size: 1rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
 	}
 
 	.bed-card:hover {
@@ -157,7 +77,6 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		margin-bottom: 0.5rem;
 	}
 
 	.bed-number {
@@ -173,73 +92,28 @@
 		font-weight: 500;
 	}
 
-	.patient-info {
-		margin-top: 0.75rem;
-		padding-top: 0.75rem;
-		border-top: 1px solid #eee;
-	}
-
-	.patient-info p {
-		margin: 0.25rem 0;
-	}
-
-	.monitoring-section {
+	.bed-body {
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
-		margin: 0.75rem 0;
-		padding: 0.75rem 0;
+	}
+
+	.patient-info {
+		padding: 0.5rem 0;
 		border-top: 1px solid #eee;
-		border-bottom: 1px solid #eee;
 	}
 
-	.btn-details {
-		background: #3498db;
-		color: white;
-		border: none;
-		padding: 0.5rem 1rem;
-		border-radius: 6px;
-		font-size: 0.875rem;
-		cursor: pointer;
-		transition: background 0.2s;
-	}
-
-	.btn-details:hover {
-		background: #2980b9;
-	}
-
-	.btn-edit {
-		background: #f39c12;
-		color: white;
-		border: none;
-		padding: 0.5rem 1rem;
-		border-radius: 6px;
-		font-size: 0.875rem;
-		cursor: pointer;
-		transition: background 0.2s;
-	}
-
-	.btn-edit:hover {
-		background: #d68910;
-	}
-
-	.btn-delete {
-		background: #e74c3c;
-		color: white;
-		border: none;
-		padding: 0.5rem 1rem;
-		border-radius: 6px;
-		font-size: 0.875rem;
-		cursor: pointer;
-		transition: background 0.2s;
-	}
-
-	.btn-delete:hover {
-		background: #c0392b;
+	.patient-name {
+		margin: 0;
+		font-size: 0.95rem;
+		color: #333;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		overflow: hidden;
 	}
 
 	.bed-type-info {
-		margin: 0.5rem 0;
+		margin-top: 0.25rem;
 	}
 
 	.bed-type-badge {
@@ -249,5 +123,6 @@
 		border-radius: 12px;
 		font-size: 0.75rem;
 		font-weight: 500;
+		display: inline-block;
 	}
 </style>

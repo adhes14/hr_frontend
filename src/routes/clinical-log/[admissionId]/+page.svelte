@@ -87,7 +87,7 @@
 			<div class="success-banner">
 				<p>{successMessage}</p>
 			</div>
-		{:else}
+		{:else if admissionId}
 			<ClinicalLogForm {admissionId} onsuccess={handleSuccess} />
 		{/if}
 	{/if}
