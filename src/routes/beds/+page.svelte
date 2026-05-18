@@ -172,7 +172,9 @@
 
 <!-- Create/Edit Modal -->
 {#if showModal}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions a11y_interactive_supports_focus -->
 	<div class="modal-overlay" role="dialog" aria-modal="true" onclick={closeModal} tabindex="-1">
+		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<div class="modal" role="document" onclick={(e) => e.stopPropagation()}>
 			<div class="modal-header">
 				<h2>{editingBed ? 'Editar Cama' : 'Nueva Cama'}</h2>
@@ -221,7 +223,9 @@
 
 <!-- Delete Confirmation Modal -->
 {#if deleteConfirm}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions a11y_interactive_supports_focus -->
 	<div class="modal-overlay" role="dialog" aria-modal="true" onclick={cancelDelete} tabindex="-1">
+		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<div class="modal modal-confirm" role="document" onclick={(e) => e.stopPropagation()}>
 			<div class="modal-header">
 				<h2>Eliminar Cama</h2>
