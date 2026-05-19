@@ -5,8 +5,11 @@
 	import type { Snippet } from 'svelte';
 	import { restoreSession, currentUser, token, clearSession } from '$lib/auth';
 	import { goto } from '$app/navigation';
+	import { pwaInfo } from 'virtual:pwa-info';
 
 	let { children }: { children: Snippet } = $props();
+
+	let webManifestLink = $derived(pwaInfo ? pwaInfo.webManifest.linkTag : '');
 
 	const pathname = $derived($page.url.pathname);
 	let authChecked = $state(false);
@@ -37,6 +40,10 @@
 		menuOpen = false;
 	}
 </script>
+
+<svelte:head>
+	{@html webManifestLink}
+</svelte:head>
 
 {#if authChecked}
 	{#if $token && pathname !== '/login'}
