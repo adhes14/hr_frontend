@@ -148,6 +148,8 @@
 
 <!-- Create User Modal -->
 {#if showCreateModal}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="modal-backdrop" onclick={() => (showCreateModal = false)}></div>
 	<dialog open class="modal">
 		<h3>Crear Nuevo Usuario</h3>
@@ -181,6 +183,8 @@
 
 <!-- Change Password Modal -->
 {#if showPasswordModal}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="modal-backdrop" onclick={() => (showPasswordModal = false)}></div>
 	<dialog open class="modal">
 		<h3>Cambiar Contraseña</h3>
