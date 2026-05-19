@@ -142,30 +142,36 @@
 	{:else if beds.length === 0}
 		<p class="message">No hay camas registradas</p>
 	{:else}
-		<div class="beds-list">
-			<div class="list-header">
-				<span class="col-number">Número</span>
-				<span class="col-type">Tipo</span>
-				<span class="col-status">Estado</span>
-				<span class="col-actions">Acciones</span>
-			</div>
-			{#each beds as bed (bed.id)}
-				<div class="bed-row">
-					<span class="col-number"><strong>{bed.bed_type?.prefix}{bed.number}</strong></span>
-					<span class="col-type">{bed.bed_type?.name ?? 'N/A'}</span>
-					<span class="col-status">
-						{#if bed.is_active}
-							<span class="badge badge-active">Activa</span>
-						{:else}
-							<span class="badge badge-inactive">Inactiva</span>
-						{/if}
-					</span>
-					<span class="col-actions">
-						<button class="btn-edit" onclick={() => openEditModal(bed)}>Editar</button>
-						<button class="btn-delete" onclick={() => confirmDelete(bed)}>Eliminar</button>
-					</span>
-				</div>
-			{/each}
+		<div class="table-responsive-wrapper">
+			<table class="modern-table">
+				<thead>
+					<tr>
+						<th>Número</th>
+						<th>Tipo</th>
+						<th>Estado</th>
+						<th>Acciones</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each beds as bed (bed.id)}
+						<tr>
+							<td class="font-medium text-main"><strong>{bed.bed_type?.prefix}{bed.number}</strong></td>
+							<td>{bed.bed_type?.name ?? 'N/A'}</td>
+							<td>
+								{#if bed.is_active}
+									<span class="badge badge-active">Activa</span>
+								{:else}
+									<span class="badge badge-inactive">Inactiva</span>
+								{/if}
+							</td>
+							<td class="col-actions">
+								<button class="btn-edit" onclick={() => openEditModal(bed)}>Editar</button>
+								<button class="btn-delete" onclick={() => confirmDelete(bed)}>Eliminar</button>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
 		</div>
 	{/if}
 </div>
@@ -295,82 +301,42 @@
 		padding: 2rem;
 	}
 
-	.beds-list {
-		border: 1px solid #eee;
-		border-radius: 8px;
-		overflow: hidden;
-	}
-
-	.list-header {
-		display: grid;
-		grid-template-columns: 1fr 2fr 1fr 1.5fr;
-		padding: 0.75rem 1rem;
-		background: #1a1a2e;
-		color: white;
-		font-weight: 600;
-		font-size: 0.875rem;
-	}
-
-	.bed-row {
-		display: grid;
-		grid-template-columns: 1fr 2fr 1fr 1.5fr;
-		padding: 0.75rem 1rem;
-		border-top: 1px solid #eee;
-		align-items: center;
-	}
-
-	.bed-row:hover {
-		background: #f8f9fa;
-	}
-
-	.badge {
-		padding: 0.25rem 0.75rem;
-		border-radius: 12px;
-		font-size: 0.75rem;
-		font-weight: 600;
-	}
-
-	.badge-active {
-		background: #2ecc71;
-		color: white;
-	}
-
-	.badge-inactive {
-		background: #95a5a6;
-		color: white;
-	}
-
 	.col-actions {
 		display: flex;
 		gap: 0.5rem;
+		align-items: center;
 	}
 
 	.btn-edit {
-		background: #3498db;
+		background: var(--info);
 		color: white;
 		border: none;
 		padding: 0.4rem 0.8rem;
-		border-radius: 6px;
+		border-radius: var(--border-radius-sm);
 		cursor: pointer;
 		font-size: 0.8rem;
+		font-weight: 500;
+		transition: background 0.2s ease;
 	}
 
 	.btn-edit:hover {
-		background: #2980b9;
+		background: #2563eb;
 	}
 
 	.btn-delete {
-		background: #e74c3c;
+		background: var(--danger);
 		color: white;
 		border: none;
 		padding: 0.4rem 0.8rem;
-		border-radius: 6px;
+		border-radius: var(--border-radius-sm);
 		cursor: pointer;
 		font-size: 0.8rem;
+		font-weight: 500;
+		transition: background 0.2s ease;
 	}
 
 	.btn-delete:hover {
-		background: #c0392b;
+		background: #dc2626;
 	}
 
 	/* Modal styles */

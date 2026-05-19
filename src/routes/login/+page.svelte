@@ -68,47 +68,59 @@
 </div>
 
 <style>
-	:global(body) {
-		background: #f0f2f5;
-	}
-
+	/* Background handled globally, but we can add a subtle pattern here */
 	.login-container {
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		min-height: calc(100vh - 100px); /* Account for padding */
+		min-height: 100vh;
+		background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%);
+		margin: -1rem; /* Negate layout padding if any */
+		padding: 1rem;
 	}
 
 	.login-card {
-		background: white;
-		padding: 2.5rem;
-		border-radius: 16px;
-		box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+		background: var(--glass-bg);
+		backdrop-filter: blur(10px);
+		-webkit-backdrop-filter: blur(10px);
+		border: 1px solid var(--glass-border);
+		padding: 3rem 2.5rem;
+		border-radius: var(--border-radius-xl);
+		box-shadow: var(--glass-shadow), var(--shadow-lg);
 		width: 100%;
-		max-width: 400px;
+		max-width: 420px;
 		text-align: center;
 	}
 
 	.logo {
-		font-size: 3rem;
-		margin-bottom: 1rem;
+		font-size: 3.5rem;
+		margin-bottom: 0.5rem;
+		animation: float 3s ease-in-out infinite;
+	}
+
+	@keyframes float {
+		0% { transform: translateY(0px); }
+		50% { transform: translateY(-10px); }
+		100% { transform: translateY(0px); }
 	}
 
 	h1 {
-		color: #1a1a2e;
+		color: var(--secondary);
 		margin: 0 0 0.5rem 0;
-		font-size: 1.5rem;
+		font-size: 1.75rem;
+		font-weight: 700;
 	}
 
 	.subtitle {
-		color: #666;
-		margin-bottom: 2rem;
+		color: var(--text-muted);
+		margin-bottom: 2.5rem;
+		font-size: 0.95rem;
 	}
 
 	form {
 		display: flex;
 		flex-direction: column;
-		gap: 1.2rem;
+		gap: 1.5rem;
 		text-align: left;
 	}
 
@@ -119,53 +131,64 @@
 	}
 
 	label {
-		color: #444;
-		font-size: 0.9rem;
-		font-weight: 500;
+		color: var(--secondary);
+		font-size: 0.875rem;
+		font-weight: 600;
 	}
 
 	input {
-		padding: 0.8rem;
-		border: 1px solid #ccc;
-		border-radius: 8px;
+		padding: 0.875rem 1rem;
+		border: 1px solid var(--border-color);
+		border-radius: var(--border-radius-md);
 		font-size: 1rem;
-		transition: border-color 0.2s;
+		background: var(--surface);
+		transition: all 0.2s ease;
 	}
 
 	input:focus {
 		outline: none;
-		border-color: #3f51b5;
-		box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.2);
+		border-color: var(--primary);
+		box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
 	}
 
 	button {
-		background: #3f51b5;
+		background: var(--primary);
 		color: white;
 		border: none;
 		padding: 1rem;
-		border-radius: 8px;
+		border-radius: var(--border-radius-md);
 		font-size: 1rem;
 		font-weight: 600;
 		cursor: pointer;
-		transition: background 0.2s;
-		margin-top: 1rem;
+		transition: all 0.2s ease;
+		margin-top: 0.5rem;
+		box-shadow: var(--shadow-md);
 	}
 
 	button:hover:not(:disabled) {
-		background: #303f9f;
+		background: var(--primary-hover);
+		transform: translateY(-1px);
+		box-shadow: var(--shadow-lg);
+	}
+
+	button:active:not(:disabled) {
+		transform: translateY(0);
 	}
 
 	button:disabled {
 		opacity: 0.7;
 		cursor: not-allowed;
+		background: var(--text-muted);
 	}
 
 	.error-msg {
-		color: #d32f2f;
-		background: #ffebee;
-		padding: 0.8rem;
-		border-radius: 8px;
-		font-size: 0.9rem;
+		color: var(--danger);
+		background: var(--danger-bg);
+		padding: 0.875rem;
+		border-radius: var(--border-radius-md);
+		font-size: 0.875rem;
+		font-weight: 500;
 		text-align: center;
+		border: 1px solid rgba(239, 68, 68, 0.2);
 	}
 </style>

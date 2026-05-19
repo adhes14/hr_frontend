@@ -1,4 +1,5 @@
 <script lang="ts">
+	import '../app.css';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import type { Snippet } from 'svelte';
@@ -9,6 +10,7 @@
 
 	const pathname = $derived($page.url.pathname);
 	let authChecked = $state(false);
+	let menuOpen = $state(false);
 
 	onMount(() => {
 		restoreSession();
@@ -23,107 +25,296 @@
 
 	function handleLogout() {
 		clearSession();
+		menuOpen = false;
 		goto('/login');
+	}
+
+	function toggleMenu() {
+		menuOpen = !menuOpen;
+	}
+	
+	function closeMenu() {
+		menuOpen = false;
 	}
 </script>
 
 {#if authChecked}
 	{#if $token && pathname !== '/login'}
-		<nav>
-			<div class="nav-links">
-				<a href="/" class:active={pathname === '/'}>
-					🏠 Camas
-				</a>
-				<a href="/patients" class:active={pathname.startsWith('/patients')}>
-					👥 Pacientes
-				</a>
+		<header class="topbar">
+			<div class="topbar-container">
+				<div class="logo">
+					<span class="logo-icon">🏥</span>
+					<span class="logo-text">Hospital Manager</span>
+				</div>
+				
+				<button class="hamburger" onclick={toggleMenu} aria-label="Menu" aria-expanded={menuOpen}>
+					<span class="bar {menuOpen ? 'open' : ''}"></span>
+					<span class="bar {menuOpen ? 'open' : ''}"></span>
+					<span class="bar {menuOpen ? 'open' : ''}"></span>
+				</button>
+
+				<nav class="desktop-nav">
+					<a href="/" class:active={pathname === '/'}>🏠 Camas</a>
+					<a href="/patients" class:active={pathname.startsWith('/patients')}>👥 Pacientes</a>
+					{#if $currentUser?.role === 'admin'}
+						<a href="/beds" class:active={pathname.startsWith('/beds')}>🛏️ Gestión</a>
+						<a href="/bed-types" class:active={pathname.startsWith('/bed-types')}>🏷️ Tipos</a>
+						<a href="/users" class:active={pathname.startsWith('/users')}>👤 Usuarios</a>
+					{/if}
+				</nav>
+
+				<div class="desktop-user">
+					<span class="username">{$currentUser?.full_name}</span>
+					<button class="logout-btn" onclick={handleLogout}>Salir</button>
+				</div>
+			</div>
+		</header>
+
+		<!-- Mobile Menu Drawer -->
+		<div class="mobile-menu {menuOpen ? 'is-open' : ''}">
+			<nav class="mobile-nav">
+				<a href="/" class:active={pathname === '/'} onclick={closeMenu}>🏠 Camas</a>
+				<a href="/patients" class:active={pathname.startsWith('/patients')} onclick={closeMenu}>👥 Pacientes</a>
 				{#if $currentUser?.role === 'admin'}
-					<a href="/beds" class:active={pathname.startsWith('/beds')}>
-						🛏️ Gestión Camas
-					</a>
-					<a href="/bed-types" class:active={pathname.startsWith('/bed-types')}>
-						🏷️ Tipos de Cama
-					</a>
-					<a href="/users" class:active={pathname.startsWith('/users')}>
-						👤 Usuarios
-					</a>
+					<a href="/beds" class:active={pathname.startsWith('/beds')} onclick={closeMenu}>🛏️ Gestión de Camas</a>
+					<a href="/bed-types" class:active={pathname.startsWith('/bed-types')} onclick={closeMenu}>🏷️ Tipos de Cama</a>
+					<a href="/users" class:active={pathname.startsWith('/users')} onclick={closeMenu}>👤 Usuarios</a>
 				{/if}
+			</nav>
+			<div class="mobile-user-section">
+				<span class="mobile-username">Usuario: {$currentUser?.full_name}</span>
+				<button class="mobile-logout-btn" onclick={handleLogout}>Cerrar Sesión</button>
 			</div>
-			<div class="user-info">
-				<span class="username">👤 {$currentUser?.full_name}</span>
-				<button class="logout-btn" onclick={handleLogout}>Salir</button>
-			</div>
-		</nav>
+		</div>
+		{#if menuOpen}
+			<!-- svelte-ignore a11y_click_events_have_key_events -->
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<div class="overlay" onclick={closeMenu}></div>
+		{/if}
 	{/if}
 
-	<main>
+	<main class={$token && pathname !== '/login' ? 'with-nav' : ''}>
 		{@render children()}
 	</main>
 {/if}
 
 <style>
-	:global(body) {
-		margin: 0;
-		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-		background: #f5f5f5;
+	/* Topbar */
+	.topbar {
+		background: var(--surface);
+		box-shadow: var(--shadow-sm);
+		position: sticky;
+		top: 0;
+		z-index: 50;
+		border-bottom: 1px solid var(--border-color);
 	}
 
-	nav {
-		background: #1a1a2e;
-		padding: 1rem;
+	.topbar-container {
+		max-width: 1400px;
+		margin: 0 auto;
+		padding: 0.75rem 1rem;
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 	}
 
-	.nav-links {
-		display: flex;
-		gap: 1rem;
-		flex-wrap: wrap;
-	}
-
-	nav a {
-		color: white;
-		text-decoration: none;
-		padding: 0.5rem 1rem;
-		border-radius: 8px;
-		transition: background 0.2s;
-	}
-
-	nav a:hover,
-	nav a.active {
-		background: rgba(255, 255, 255, 0.2);
-	}
-
-	.user-info {
+	.logo {
 		display: flex;
 		align-items: center;
+		gap: 0.5rem;
+		font-weight: 700;
+		font-size: 1.125rem;
+		color: var(--secondary);
+	}
+
+	.logo-text {
+		display: none;
+	}
+
+	/* Hamburger Button */
+	.hamburger {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-around;
+		width: 30px;
+		height: 24px;
+		background: transparent;
+		border: none;
+		cursor: pointer;
+		padding: 0;
+		z-index: 60;
+	}
+
+	.hamburger .bar {
+		width: 30px;
+		height: 3px;
+		background: var(--text-main);
+		border-radius: 10px;
+		transition: all 0.3s linear;
+		position: relative;
+		transform-origin: 1px;
+	}
+
+	.hamburger .bar.open:nth-child(1) {
+		transform: rotate(45deg);
+	}
+
+	.hamburger .bar.open:nth-child(2) {
+		opacity: 0;
+		transform: translateX(20px);
+	}
+
+	.hamburger .bar.open:nth-child(3) {
+		transform: rotate(-45deg);
+	}
+
+	/* Desktop Navigation (Hidden on Mobile) */
+	.desktop-nav {
+		display: none;
+	}
+
+	.desktop-user {
+		display: none;
+	}
+
+	/* Mobile Menu */
+	.mobile-menu {
+		position: fixed;
+		top: 60px; /* Below topbar */
+		left: -100%;
+		width: 80%;
+		max-width: 300px;
+		height: calc(100vh - 60px);
+		background: var(--surface);
+		box-shadow: var(--shadow-lg);
+		transition: left 0.3s ease-in-out;
+		z-index: 55;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+	}
+
+	.mobile-menu.is-open {
+		left: 0;
+	}
+
+	.mobile-nav {
+		display: flex;
+		flex-direction: column;
+		padding: 1rem 0;
+	}
+
+	.mobile-nav a {
+		padding: 1rem 1.5rem;
+		color: var(--text-main);
+		font-weight: 500;
+		border-left: 4px solid transparent;
+	}
+
+	.mobile-nav a:active, .mobile-nav a.active {
+		background: var(--info-bg);
+		color: var(--primary);
+		border-left-color: var(--primary);
+	}
+
+	.mobile-user-section {
+		padding: 1.5rem;
+		border-top: 1px solid var(--border-color);
+		display: flex;
+		flex-direction: column;
 		gap: 1rem;
 	}
 
-	.username {
-		color: #e0e0e0;
-		font-size: 0.9rem;
+	.mobile-username {
+		font-weight: 600;
+		color: var(--secondary);
 	}
 
-	.logout-btn {
-		background: rgba(255, 60, 60, 0.2);
-		color: #ffcccc;
-		border: 1px solid rgba(255, 60, 60, 0.5);
-		padding: 0.4rem 0.8rem;
-		border-radius: 6px;
+	.mobile-logout-btn, .logout-btn {
+		background: var(--danger-bg);
+		color: var(--danger);
+		border: 1px solid rgba(239, 68, 68, 0.2);
+		padding: 0.5rem 1rem;
+		border-radius: var(--border-radius-md);
+		font-weight: 600;
 		cursor: pointer;
 		transition: all 0.2s;
 	}
 
-	.logout-btn:hover {
-		background: rgba(255, 60, 60, 0.4);
+	.mobile-logout-btn:active, .logout-btn:hover {
+		background: var(--danger);
 		color: white;
 	}
 
+	.overlay {
+		position: fixed;
+		top: 60px;
+		left: 0;
+		width: 100vw;
+		height: calc(100vh - 60px);
+		background: rgba(0, 0, 0, 0.4);
+		z-index: 50;
+		backdrop-filter: blur(2px);
+	}
+
 	main {
-		max-width: 1200px;
+		width: 100%;
+		min-height: 100vh;
+	}
+
+	main.with-nav {
+		max-width: 1400px;
 		margin: 0 auto;
 		padding: 1rem;
+		min-height: calc(100vh - 60px);
+	}
+
+	/* Desktop Adjustments */
+	@media (min-width: 768px) {
+		.hamburger {
+			display: none;
+		}
+
+		.logo-text {
+			display: block;
+		}
+
+		.mobile-menu, .overlay {
+			display: none;
+		}
+
+		.desktop-nav {
+			display: flex;
+			gap: 0.5rem;
+		}
+
+		.desktop-nav a {
+			color: var(--text-muted);
+			font-weight: 500;
+			padding: 0.5rem 0.75rem;
+			border-radius: var(--border-radius-md);
+			transition: all 0.2s;
+		}
+
+		.desktop-nav a:hover {
+			color: var(--text-main);
+			background: var(--background);
+		}
+
+		.desktop-nav a.active {
+			color: var(--primary);
+			background: var(--info-bg);
+		}
+
+		.desktop-user {
+			display: flex;
+			align-items: center;
+			gap: 1rem;
+		}
+
+		.username {
+			font-weight: 500;
+			color: var(--secondary);
+		}
 	}
 </style>

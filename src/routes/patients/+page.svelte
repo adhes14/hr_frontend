@@ -204,24 +204,30 @@
 		<p class="message">No se encontraron pacientes</p>
 	{:else}
 		<!-- Patient list -->
-		<div class="patient-list">
-			<div class="list-header">
-				<span class="col-name">Nombre</span>
-				<span class="col-dni">DNI</span>
-				<span class="col-birth">Fecha Nac.</span>
-				<span class="col-actions">Acciones</span>
-			</div>
-			{#each patients as patient (patient.id)}
-				<div class="patient-row">
-					<span class="col-name">{patient.full_name}</span>
-					<span class="col-dni">{patient.identity_number}</span>
-					<span class="col-birth">{patient.birth_date.split('T')[0]}</span>
-					<span class="col-actions">
-						<button class="btn-edit" onclick={() => openEditModal(patient)}>Editar</button>
-						<a href="/admissions/new?patient_id={patient.id}" class="btn-internar">Internar</a>
-					</span>
-				</div>
-			{/each}
+		<div class="table-responsive-wrapper">
+			<table class="modern-table">
+				<thead>
+					<tr>
+						<th>Nombre</th>
+						<th>DNI</th>
+						<th>Fecha Nac.</th>
+						<th>Acciones</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each patients as patient (patient.id)}
+						<tr>
+							<td class="font-medium text-main">{patient.full_name}</td>
+							<td class="text-muted">{patient.identity_number}</td>
+							<td class="text-muted">{patient.birth_date.split('T')[0]}</td>
+							<td class="col-actions">
+								<button class="btn-edit" onclick={() => openEditModal(patient)}>Editar</button>
+								<a href="/admissions/new?patient_id={patient.id}" class="btn-internar">Internar</a>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
 		</div>
 
 		<!-- Pagination -->
@@ -412,79 +418,43 @@
 		padding: 2rem;
 	}
 
-	/* Patient list table */
-	.patient-list {
-		border: 1px solid #eee;
-		border-radius: 8px;
-		overflow: hidden;
-	}
-
-	.list-header {
-		display: grid;
-		grid-template-columns: 2fr 1fr 1fr 1.5fr;
-		padding: 0.75rem 1rem;
-		background: #1a1a2e;
-		color: white;
-		font-weight: 600;
-		font-size: 0.875rem;
-	}
-
-	.patient-row {
-		display: grid;
-		grid-template-columns: 2fr 1fr 1fr 1.5fr;
-		padding: 0.75rem 1rem;
-		border-top: 1px solid #eee;
-		align-items: center;
-	}
-
-	.patient-row:hover {
-		background: #f8f9fa;
-	}
-
-	.col-name {
-		font-weight: 500;
-	}
-
-	.col-dni {
-		color: #555;
-	}
-
-	.col-birth {
-		color: #555;
-		font-size: 0.875rem;
-	}
-
+	/* Table Action Buttons */
 	.col-actions {
 		display: flex;
 		gap: 0.5rem;
+		align-items: center;
 	}
 
 	.btn-edit {
-		background: #3498db;
+		background: var(--info);
 		color: white;
 		border: none;
 		padding: 0.4rem 0.8rem;
-		border-radius: 6px;
+		border-radius: var(--border-radius-sm);
 		cursor: pointer;
 		font-size: 0.8rem;
+		font-weight: 500;
+		transition: background 0.2s ease;
 	}
 
 	.btn-edit:hover {
-		background: #2980b9;
+		background: #2563eb;
 	}
 
 	.btn-internar {
-		background: #2ecc71;
+		background: var(--success);
 		color: white;
 		padding: 0.4rem 0.8rem;
-		border-radius: 6px;
+		border-radius: var(--border-radius-sm);
 		text-decoration: none;
 		font-size: 0.8rem;
+		font-weight: 500;
 		display: inline-block;
+		transition: background 0.2s ease;
 	}
 
 	.btn-internar:hover {
-		background: #27ae60;
+		background: #059669;
 	}
 
 	/* Pagination */

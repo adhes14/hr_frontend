@@ -58,36 +58,43 @@
 
 <style>
 	.dashboard {
-		background: white;
-		border-radius: 12px;
-		padding: 1.5rem;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		background: var(--surface);
+		border-radius: var(--border-radius-lg); /* Slightly smaller on mobile */
+		padding: 1rem; /* Reduced padding for mobile */
+		box-shadow: var(--shadow-md);
 	}
 
 	.header {
 		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 1.5rem;
+		flex-direction: column;
+		gap: 0.75rem; /* Reduced gap */
+		margin-bottom: 1.5rem; /* Reduced margin */
 	}
 
 	h2 {
 		margin: 0;
-		color: #1a1a2e;
+		color: var(--secondary);
+		font-size: 1.25rem; /* Reduced for mobile */
 	}
 
 	.refresh-btn {
-		background: #1a1a2e;
+		background: var(--primary);
 		color: white;
 		border: none;
-		padding: 0.5rem 1rem;
-		border-radius: 8px;
+		padding: 0.5rem 1rem; /* Reduced padding */
+		border-radius: var(--border-radius-md);
 		cursor: pointer;
-		font-size: 0.875rem;
+		font-size: 0.8125rem; /* Reduced font size */
+		font-weight: 600;
+		transition: all 0.2s ease;
+		box-shadow: var(--shadow-sm);
+		align-self: flex-start;
 	}
 
 	.refresh-btn:hover:not(:disabled) {
-		background: #16213e;
+		background: var(--primary-hover);
+		transform: translateY(-1px);
+		box-shadow: var(--shadow-md);
 	}
 
 	.refresh-btn:disabled {
@@ -97,31 +104,65 @@
 
 	.beds-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-		gap: 1rem;
+		grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); /* Smaller minimum width for mobile */
+		gap: 0.75rem; /* Reduced gap for mobile */
 	}
 
 	.loading, .empty {
 		text-align: center;
-		color: #666;
-		padding: 2rem;
+		color: var(--text-muted);
+		padding: 2rem 1rem; /* Reduced padding */
+		font-size: 0.9375rem; /* Reduced font size */
 	}
 
 	.error {
-		background: #fee;
-		border: 1px solid #fcc;
-		border-radius: 8px;
-		padding: 1rem;
+		background: var(--danger-bg);
+		border: 1px solid rgba(239, 68, 68, 0.3);
+		border-radius: var(--border-radius-md);
+		padding: 1rem; /* Reduced padding */
 		text-align: center;
+		color: var(--danger);
+		font-size: 0.9375rem;
 	}
 
 	.error button {
-		margin-top: 0.5rem;
-		background: #e74c3c;
+		margin-top: 0.75rem;
+		background: var(--danger);
 		color: white;
 		border: none;
-		padding: 0.5rem 1rem;
-		border-radius: 4px;
+		padding: 0.4rem 1rem;
+		border-radius: var(--border-radius-sm);
 		cursor: pointer;
+		font-weight: 500;
+		transition: background 0.2s ease;
+	}
+	
+	.error button:hover {
+		background: #dc2626; /* darker red */
+	}
+
+	@media (min-width: 640px) {
+		.dashboard {
+			padding: 2rem;
+			border-radius: var(--border-radius-xl);
+		}
+		.header {
+			flex-direction: row;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 2rem;
+		}
+		h2 {
+			font-size: 1.5rem;
+		}
+		.refresh-btn {
+			align-self: auto;
+			padding: 0.75rem 1.25rem;
+			font-size: 0.875rem;
+		}
+		.beds-grid {
+			grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Desktop size */
+			gap: 1.25rem;
+		}
 	}
 </style>

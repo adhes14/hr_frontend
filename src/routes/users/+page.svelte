@@ -100,8 +100,8 @@
 {#if loading}
 	<div class="loading">Cargando...</div>
 {:else}
-	<div class="table-container">
-		<table>
+	<div class="table-responsive-wrapper">
+		<table class="modern-table">
 			<thead>
 				<tr>
 					<th>Nombre</th>
@@ -114,7 +114,7 @@
 			<tbody>
 				{#each users as user}
 					<tr class:inactive={!user.is_active}>
-						<td>{user.full_name}</td>
+						<td class="font-medium text-main">{user.full_name}</td>
 						<td><strong>{user.username}</strong></td>
 						<td>
 							<span class="badge {user.role}">
@@ -203,38 +203,12 @@
 		justify-content: space-between;
 		align-items: center;
 		margin-bottom: 2rem;
-	}
-
-	.table-container {
-		background: white;
-		border-radius: 12px;
-		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-		overflow: hidden;
-	}
-
-	table {
-		width: 100%;
-		border-collapse: collapse;
-	}
-
-	th, td {
-		padding: 1rem;
-		text-align: left;
-		border-bottom: 1px solid #f0f0f0;
-	}
-
-	th {
-		background: #f8f9fa;
-		font-weight: 600;
-		color: #444;
-	}
-
-	tr:hover {
-		background: #fdfdfd;
+		flex-wrap: wrap;
+		gap: 1rem;
 	}
 
 	tr.inactive {
-		background: #fafafa;
+		background: var(--background);
 		opacity: 0.7;
 	}
 
@@ -245,43 +219,44 @@
 		font-weight: 500;
 	}
 
-	.badge.admin { background: #e3f2fd; color: #1565c0; }
+	.badge.admin { background: var(--info-bg); color: var(--info); }
 	.badge.health_staff { background: #f3e5f5; color: #7b1fa2; }
-	.badge.active { background: #e8f5e9; color: #2e7d32; }
-	.badge.inactive { background: #ffebee; color: #c62828; }
+	.badge.active { background: var(--success-bg); color: var(--success); }
+	.badge.inactive { background: var(--danger-bg); color: var(--danger); }
 
 	.actions {
 		display: flex;
 		gap: 0.5rem;
+		flex-wrap: wrap;
 	}
 
 	button {
 		border: none;
 		padding: 0.5rem 1rem;
-		border-radius: 6px;
+		border-radius: var(--border-radius-sm);
 		font-weight: 500;
 		cursor: pointer;
-		transition: all 0.2s;
+		transition: all 0.2s ease;
 	}
 
-	button.primary { background: #3f51b5; color: white; }
-	button.primary:hover { background: #303f9f; }
+	button.primary { background: var(--primary); color: white; }
+	button.primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
 	
-	button.secondary { background: #e0e0e0; color: #333; }
-	button.secondary:hover { background: #d0d0d0; }
+	button.secondary { background: var(--background); color: var(--text-main); border: 1px solid var(--border-color); }
+	button.secondary:hover { background: var(--border-color); }
 	
-	button.danger { background: #ffebee; color: #c62828; }
+	button.danger { background: var(--danger-bg); color: var(--danger); }
 	button.danger:hover { background: #ffcdd2; }
 	
-	button.success { background: #e8f5e9; color: #2e7d32; }
+	button.success { background: var(--success-bg); color: var(--success); }
 	button.success:hover { background: #c8e6c9; }
 
-	button.text { background: transparent; color: #666; }
-	button.text:hover { background: #f0f0f0; }
+	button.text { background: transparent; color: var(--text-muted); }
+	button.text:hover { background: var(--background); }
 
 	.empty {
 		text-align: center;
-		color: #888;
+		color: var(--text-muted);
 		padding: 3rem;
 	}
 
