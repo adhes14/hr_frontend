@@ -22,6 +22,10 @@ export interface Bed {
 	current_admission_id: string | null;
 	current_patient_name?: string;
 	is_active: boolean;
+	next_control_at?: string | null;
+	estimated_discharge_at?: string | null;
+	event_type?: 'parto' | 'cesarea' | 'ninguno' | null;
+	control_count?: number;
 }
 
 export interface Patient {
@@ -311,5 +315,23 @@ export async function setUserActive(id: string, is_active: boolean): Promise<voi
 	await fetchJSON(`/users/${id}/active`, {
 		method: 'PUT',
 		body: JSON.stringify({ is_active })
+	});
+}
+
+// System Settings & SSE Ticket
+export async function getSettings(): Promise<Record<string, string>> {
+	return fetchJSON<Record<string, string>>('/settings');
+}
+
+export async function updateSettings(settings: Record<string, string>): Promise<{ message: string }> {
+	return fetchJSON<{ message: string }>('/settings', {
+		method: 'PUT',
+		body: JSON.stringify(settings)
+	});
+}
+
+export async function getSSETicket(): Promise<{ ticket: string }> {
+	return fetchJSON<{ ticket: string }>('/auth/sse-ticket', {
+		method: 'POST'
 	});
 }

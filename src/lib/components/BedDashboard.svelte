@@ -4,6 +4,7 @@
 	import BedCard from './BedCard.svelte';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import { bedUpdateTrigger } from '$lib/sse';
 
 	let beds = $state<Bed[]>([]);
 	let loading = $state(true);
@@ -27,6 +28,13 @@
 
 	onMount(() => {
 		loadBeds();
+	});
+
+	$effect(() => {
+		const trigger = $bedUpdateTrigger;
+		if (trigger > 0) {
+			loadBeds();
+		}
 	});
 </script>
 

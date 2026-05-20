@@ -6,6 +6,7 @@
 	import { restoreSession, currentUser, token, clearSession } from '$lib/auth';
 	import { goto } from '$app/navigation';
 	import { pwaInfo } from 'virtual:pwa-info';
+	import { connectSSE, disconnectSSE, requestNotificationPermission } from '$lib/sse';
 
 	let { children }: { children: Snippet } = $props();
 
@@ -18,11 +19,19 @@
 	onMount(() => {
 		restoreSession();
 		authChecked = true;
+		requestNotificationPermission();
 	});
 
 	$effect(() => {
-		if (authChecked && !$token && pathname !== '/login') {
-			goto('/login');
+		if (authChecked) {
+			if (!$token && pathname !== '/login') {
+				goto('/login');
+			}
+			if ($token) {
+				connectSSE();
+			} else {
+				disconnectSSE();
+			}
 		}
 	});
 
@@ -64,9 +73,7 @@
 					<a href="/" class:active={pathname === '/'}>🏠 Camas</a>
 					<a href="/patients" class:active={pathname.startsWith('/patients')}>👥 Pacientes</a>
 					{#if $currentUser?.role === 'admin'}
-						<a href="/beds" class:active={pathname.startsWith('/beds')}>🛏️ Gestión</a>
-						<a href="/bed-types" class:active={pathname.startsWith('/bed-types')}>🏷️ Tipos</a>
-						<a href="/users" class:active={pathname.startsWith('/users')}>👤 Usuarios</a>
+						<a href="/admin" class:active={pathname.startsWith('/admin')}>⚙️ Panel Admin</a>
 					{/if}
 				</nav>
 
@@ -83,9 +90,7 @@
 				<a href="/" class:active={pathname === '/'} onclick={closeMenu}>🏠 Camas</a>
 				<a href="/patients" class:active={pathname.startsWith('/patients')} onclick={closeMenu}>👥 Pacientes</a>
 				{#if $currentUser?.role === 'admin'}
-					<a href="/beds" class:active={pathname.startsWith('/beds')} onclick={closeMenu}>🛏️ Gestión de Camas</a>
-					<a href="/bed-types" class:active={pathname.startsWith('/bed-types')} onclick={closeMenu}>🏷️ Tipos de Cama</a>
-					<a href="/users" class:active={pathname.startsWith('/users')} onclick={closeMenu}>👤 Usuarios</a>
+					<a href="/admin" class:active={pathname.startsWith('/admin')} onclick={closeMenu}>⚙️ Panel Admin</a>
 				{/if}
 			</nav>
 			<div class="mobile-user-section">
