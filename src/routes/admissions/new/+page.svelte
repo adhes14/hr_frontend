@@ -130,9 +130,13 @@
 		<div class="field">
 			<label for="patient-search">Paciente</label>
 			{#if selectedPatientId}
-				<div class="selected-patient">
+				<div class="selected-patient" class:warning-bg={selectedPatient?.is_admitted}>
 					{#if selectedPatient}
-						<span>Paciente seleccionado: {selectedPatient.full_name}</span>
+						{#if selectedPatient.is_admitted}
+							<span class="warning-text">El paciente {selectedPatient.full_name} ya está internado.</span>
+						{:else}
+							<span>Paciente seleccionado: {selectedPatient.full_name}</span>
+						{/if}
 					{:else}
 						<span>Cargando datos del paciente...</span>
 					{/if}
@@ -159,9 +163,16 @@
 								type="button"
 								class="patient-option"
 								class:selected={selectedPatientId === patient.id}
-								onclick={() => { selectedPatientId = patient.id; }}
+								class:disabled={patient.is_admitted}
+								disabled={patient.is_admitted}
+								onclick={() => { if (!patient.is_admitted) selectedPatientId = patient.id; }}
 							>
-								<strong>{patient.full_name}</strong>
+								<strong>
+									{patient.full_name}
+									{#if patient.is_admitted}
+										<span class="badge-internado">(Ya internado/a)</span>
+									{/if}
+								</strong>
 								<span>DNI: {patient.identity_number}</span>
 							</button>
 						{/each}
@@ -170,7 +181,7 @@
 			{/if}
 		</div>
 
-		<button type="submit" class="btn-submit" disabled={loading || !selectedBedId || !selectedPatientId}>
+		<button type="submit" class="btn-submit" disabled={loading || !selectedBedId || !selectedPatientId || selectedPatient?.is_admitted}>
 			{loading ? 'Internando...' : 'Internar Paciente'}
 		</button>
 	</form>
@@ -287,6 +298,33 @@
 		padding: 0.75rem;
 		background: #e8f5e9;
 		border-radius: 8px;
+	}
+
+	.selected-patient.warning-bg {
+		background: #feeecd;
+		border: 1px solid #f5c2c2;
+	}
+
+	.warning-text {
+		color: #b58105;
+		font-weight: 500;
+	}
+
+	.patient-option.disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+		background: #f9f9f9;
+	}
+
+	.patient-option.disabled:hover {
+		background: #f9f9f9;
+	}
+
+	.badge-internado {
+		color: #3b82f6;
+		font-size: 0.8rem;
+		font-weight: normal;
+		margin-left: 0.5rem;
 	}
 
 	.btn-clear {

@@ -34,6 +34,8 @@ export interface Patient {
 	full_name: string;
 	birth_date: string;
 	obstetric_history: Record<string, unknown>;
+	is_admitted: boolean;
+	current_admission_id: string | null;
 }
 
 export interface PaginatedResponse<T> {
