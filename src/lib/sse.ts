@@ -205,7 +205,7 @@ function showBrowserNotification(title: string, body: string) {
 				body,
 				tag: title + body,
 				renotify: true
-			});
+			} as any);
 		} catch (e) {
 			console.error('Failed to show notification', e);
 		}

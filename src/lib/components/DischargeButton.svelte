@@ -65,15 +65,15 @@
 	}
 
 	.error {
-		color: #c00;
+		color: var(--danger);
 		font-size: 0.875rem;
 		margin-bottom: 0.5rem;
 	}
 
 	.confirm {
-		background: #fff3cd;
-		border: 1px solid #ffc107;
-		border-radius: 8px;
+		background: var(--warning-bg);
+		border: 1px solid rgba(217, 119, 6, 0.3);
+		border-radius: var(--border-radius-md);
 		padding: 1rem;
 		text-align: center;
 	}
@@ -81,6 +81,7 @@
 	.confirm p {
 		margin: 0 0 0.75rem 0;
 		font-weight: 500;
+		color: var(--secondary);
 	}
 
 	.actions {
@@ -90,40 +91,57 @@
 	}
 
 	.btn-confirm {
-		background: #e74c3c;
+		background: var(--danger);
 		color: white;
 		border: none;
-		padding: 0.5rem 1rem;
-		border-radius: 6px;
+		padding: 0.5rem 1.25rem;
+		border-radius: var(--border-radius-sm);
 		cursor: pointer;
+		font-weight: 500;
+		transition: background 0.2s ease;
 	}
 
 	.btn-confirm:hover:not(:disabled) {
-		background: #c0392b;
+		background: #b91c1c;
 	}
 
 	.btn-cancel {
-		background: #6c757d;
+		background: var(--text-muted);
 		color: white;
 		border: none;
-		padding: 0.5rem 1rem;
-		border-radius: 6px;
+		padding: 0.5rem 1.25rem;
+		border-radius: var(--border-radius-sm);
 		cursor: pointer;
+		font-weight: 500;
+		transition: background 0.2s ease;
+	}
+
+	.btn-cancel:hover {
+		background: var(--secondary);
 	}
 
 	.btn-discharge {
-		background: #e74c3c;
+		background: var(--danger);
 		color: white;
 		border: none;
 		padding: 0.75rem 1.5rem;
-		border-radius: 8px;
+		border-radius: var(--border-radius-md);
 		cursor: pointer;
 		font-size: 1rem;
 		width: 100%;
+		font-weight: 600;
+		transition: all 0.2s ease;
+		box-shadow: var(--shadow-sm);
 	}
 
 	.btn-discharge:hover:not(:disabled) {
-		background: #c0392b;
+		background: #b91c1c;
+		box-shadow: var(--shadow-md);
+		transform: translateY(-1px);
+	}
+
+	.btn-discharge:active:not(:disabled) {
+		transform: translateY(1px);
 	}
 
 	.btn-discharge:disabled, .btn-confirm:disabled {

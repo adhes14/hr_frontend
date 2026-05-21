@@ -129,24 +129,24 @@
 	}
 
 	.complete {
-		background: #2ecc71;
-		color: white;
+		background: var(--success);
+		color: var(--text-light);
 	}
 
 	.overdue {
-		background: #e74c3c;
-		color: white;
+		background: var(--danger);
+		color: var(--text-light);
 		animation: pulse 1.5s ease-in-out infinite;
 	}
 
 	.warning {
-		background: #f39c12;
-		color: white;
+		background: var(--warning);
+		color: var(--text-light);
 	}
 
 	.normal {
-		background: #3498db;
-		color: white;
+		background: var(--info);
+		color: var(--text-light);
 	}
 
 	@keyframes pulse {

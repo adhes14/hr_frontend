@@ -2,42 +2,44 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  /* Color Palette (Modern Indigo/Blue) */
-  --primary: #4f46e5;
-  --primary-hover: #4338ca;
-  --secondary: #1e293b;
-  --background: #f8fafc;
+  /* Color Palette (Refined Teal & Slate Medical Theme) */
+  --primary: #0f766e; /* Teal 700 - Clinical & Professional */
+  --primary-hover: #115e59; /* Teal 800 */
+  --primary-bg: #f0fdfa; /* Teal 50 */
+  --secondary: #0f172a; /* Slate 900 */
+  --background: #f1f5f9; /* Slate 100 */
   --surface: #ffffff;
   
   /* Text Colors */
   --text-main: #0f172a;
-  --text-muted: #64748b;
+  --text-muted: #475569; /* Slate 600 */
   --text-light: #f8fafc;
 
-  /* Status Colors */
-  --success: #10b981;
-  --success-bg: #d1fae5;
-  --warning: #f59e0b;
-  --warning-bg: #fef3c7;
-  --danger: #ef4444;
-  --danger-bg: #fee2e2;
-  --info: #3b82f6;
-  --info-bg: #dbeafe;
+  /* Status Colors (Satin Gem Tones) */
+  --success: #059669; /* Emerald 600 */
+  --success-bg: #ecfdf5;
+  --warning: #d97706; /* Amber 600 */
+  --warning-bg: #fffbeb;
+  --danger: #dc2626; /* Crimson Red 600 */
+  --danger-bg: #fef2f2;
+  --info: #2563eb; /* Cobalt Blue 600 */
+  --info-bg: #eff6ff;
 
   /* Shadows and Borders */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -4px rgba(15, 23, 42, 0.1);
   --border-radius-sm: 0.375rem;
   --border-radius-md: 0.5rem;
   --border-radius-lg: 0.75rem;
   --border-radius-xl: 1rem;
   --border-color: #e2e8f0;
 
-  /* Glassmorphism */
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.5);
-  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  /* Glassmorphism Premium */
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(226, 232, 240, 0.8);
+  --glass-blur: blur(12px);
+  --glass-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.05);
 }
 
 * {
@@ -117,26 +119,55 @@ button {
 
 /* Mobile Responsiveness Adjustments */
 @media (max-width: 640px) {
+  html {
+    font-size: 14px; /* Global rem scaling (shrinks all rem units by 12.5%) */
+  }
+
   body {
-    font-size: 0.9375rem; /* 15px */
+    font-size: 0.875rem;
   }
 
   h1 {
-    font-size: 1.5rem;
+    font-size: 1.35rem;
   }
   
   h2 {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
+  }
+
+  h3 {
+    font-size: 1rem;
+  }
+
+  /* Global main container padding reduction */
+  main.with-nav {
+    padding: 0.5rem !important;
+  }
+
+  /* Global topbar container padding reduction */
+  .topbar-container {
+    padding: 0.5rem 0.75rem !important;
+  }
+
+  /* Compact spacing for dashboard, cards, panels, and sections */
+  .card, .section, .panel, .dashboard-grid {
+    padding: 0.75rem !important;
+    gap: 0.75rem !important;
+  }
+
+  /* Form spacing reduction */
+  .form-group, .param-group {
+    margin-bottom: 0.75rem !important;
   }
 
   /* Extra reduction for tables as requested */
   .modern-table th {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.75rem;
+    padding: 0.4rem 0.6rem !important;
+    font-size: 0.725rem !important;
   }
 
   .modern-table td {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8125rem;
+    padding: 0.4rem 0.6rem !important;
+    font-size: 0.775rem !important;
   }
 }

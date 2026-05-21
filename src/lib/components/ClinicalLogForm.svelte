@@ -310,39 +310,44 @@
 	}
 
 	.error-banner {
-		background: #fee;
-		border: 1px solid #fcc;
-		border-radius: 8px;
+		background: var(--danger-bg);
+		border: 1px solid rgba(220, 38, 38, 0.2);
+		border-radius: var(--border-radius-md);
 		padding: 0.75rem;
-		color: #c00;
+		color: var(--danger);
 		text-align: center;
+		font-weight: 500;
+		font-size: 0.9rem;
 	}
 
 	.section {
-		background: white;
-		border-radius: 12px;
-		padding: 1rem;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		background: var(--surface);
+		border-radius: var(--border-radius-lg);
+		padding: 1.25rem;
+		border: 1px solid var(--border-color);
+		box-shadow: var(--shadow-sm);
 	}
 
 	.section-header {
-		margin: 0 0 1rem 0;
-		font-size: 1rem;
-		font-weight: 600;
-		color: #1a1a2e;
-		padding-bottom: 0.5rem;
-		border-bottom: 2px solid #f0f0f0;
+		margin: 0 0 1.25rem 0;
+		font-size: 0.95rem;
+		font-weight: 700;
+		color: var(--secondary);
+		padding-bottom: 0.75rem;
+		border-bottom: 1px solid var(--border-color);
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
 	}
 
 	.vitals-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-		gap: 1rem;
+		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+		gap: 1.25rem;
 		justify-items: center;
 	}
 
 	.param-group {
-		margin-bottom: 1rem;
+		margin-bottom: 1.25rem;
 	}
 
 	.param-group:last-child {
@@ -353,41 +358,51 @@
 		display: block;
 		font-size: 0.875rem;
 		font-weight: 500;
-		color: #555;
+		color: var(--text-muted);
 		margin-bottom: 0.5rem;
 	}
 
 	.toggle-group {
 		display: flex;
-		gap: 0.5rem;
-	}
-
-	.toggle-group.three {
-		gap: 0.375rem;
+		background: var(--background);
+		padding: 0.25rem;
+		border-radius: var(--border-radius-md);
+		border: 1px solid var(--border-color);
+		width: 100%;
+		box-sizing: border-box;
+		gap: 0.25rem;
+		flex-wrap: wrap;
 	}
 
 	.toggle-btn {
 		flex: 1;
-		min-height: 44px;
+		min-width: 80px;
+		min-height: 40px;
 		padding: 0.5rem 0.75rem;
-		border: 2px solid #ddd;
-		border-radius: 8px;
-		background: white;
-		color: #333;
+		border: 1px solid transparent;
+		border-radius: calc(var(--border-radius-md) - 0.125rem);
+		background: transparent;
+		color: var(--text-muted);
 		font-size: 0.875rem;
-		font-weight: 500;
+		font-weight: 600;
 		cursor: pointer;
-		transition: all 0.2s;
+		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
 	}
 
 	.toggle-btn:hover:not(.active) {
-		border-color: #1a1a2e;
+		color: var(--primary);
+		background: rgba(15, 118, 110, 0.05);
 	}
 
 	.toggle-btn.active {
-		background: #1a1a2e;
-		border-color: #1a1a2e;
-		color: white;
+		background: var(--surface);
+		color: var(--primary);
+		box-shadow: var(--shadow-sm);
+		border-color: rgba(15, 118, 110, 0.15);
 	}
 
 	.notes-group {
@@ -399,53 +414,122 @@
 	textarea {
 		width: 100%;
 		padding: 0.75rem;
-		border: 2px solid #ddd;
-		border-radius: 8px;
+		border: 1px solid var(--border-color);
+		border-radius: var(--border-radius-md);
 		font-size: 1rem;
 		font-family: inherit;
 		resize: vertical;
 		box-sizing: border-box;
+		background: var(--background);
+		color: var(--text-main);
+		transition: all 0.2s ease;
 	}
 
 	textarea:focus {
 		outline: none;
-		border-color: #1a1a2e;
+		border-color: var(--primary);
+		background: var(--surface);
+		box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
 	}
 
 	.char-counter {
 		font-size: 0.75rem;
-		color: #888;
+		color: var(--text-muted);
 		text-align: right;
 	}
 
 	.submit-area {
 		position: sticky;
-		bottom: 0;
-		background: #f5f5f5;
+		bottom: 1rem;
+		background: var(--glass-bg);
+		backdrop-filter: var(--glass-blur);
+		-webkit-backdrop-filter: var(--glass-blur);
+		border: 1px solid var(--glass-border);
+		border-radius: var(--border-radius-lg);
 		padding: 1rem;
-		margin: 0 -1rem;
-		box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+		margin: 1.5rem 0 0 0;
+		box-shadow: var(--glass-shadow);
+		z-index: 10;
+		display: flex;
+		justify-content: center;
+		align-items: center;
 	}
 
 	.btn-submit {
 		width: 100%;
 		min-height: 48px;
-		background: #2ecc71;
+		background: var(--primary);
 		color: white;
 		border: none;
-		border-radius: 8px;
+		border-radius: var(--border-radius-md);
 		font-size: 1rem;
 		font-weight: 600;
 		cursor: pointer;
-		transition: background 0.2s;
+		transition: all 0.2s ease;
+		box-shadow: var(--shadow-md);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
 	}
 
 	.btn-submit:hover:not(:disabled) {
-		background: #27ae60;
+		background: var(--primary-hover);
+		transform: translateY(-1px);
+		box-shadow: var(--shadow-lg);
+	}
+
+	.btn-submit:active:not(:disabled) {
+		transform: translateY(1px);
 	}
 
 	.btn-submit:disabled {
-		opacity: 0.5;
+		opacity: 0.4;
 		cursor: not-allowed;
+		background: var(--text-muted);
+		box-shadow: none;
+	}
+
+	@media (max-width: 640px) {
+		.clinical-log-form {
+			gap: 1rem;
+		}
+		.section {
+			padding: 0.875rem;
+		}
+		.section-header {
+			font-size: 0.85rem;
+			margin-bottom: 1rem;
+			padding-bottom: 0.5rem;
+		}
+		.param-group {
+			margin-bottom: 1rem;
+		}
+		.param-label {
+			font-size: 0.8rem;
+			margin-bottom: 0.375rem;
+		}
+		.toggle-btn {
+			min-height: 36px;
+			padding: 0.375rem 0.5rem;
+			font-size: 0.8rem;
+			min-width: 68px;
+		}
+		textarea {
+			padding: 0.5rem;
+			font-size: 0.9rem;
+		}
+		.submit-area {
+			padding: 0.75rem;
+			bottom: 0.5rem;
+			margin-top: 1rem;
+		}
+		.btn-submit {
+			min-height: 42px;
+			font-size: 0.9rem;
+		}
+		.vitals-grid {
+			grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+		}
 	}
 </style>
