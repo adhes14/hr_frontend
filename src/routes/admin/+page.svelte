@@ -563,6 +563,32 @@
 						</div>
 					</div>
 
+					<div class="setting-row">
+						<div class="setting-info">
+							<span class="setting-title">📥 Nueva Admisión (Ingreso)</span>
+							<span class="setting-help">Se reproduce al ingresar un paciente a una cama.</span>
+						</div>
+						<div class="setting-input">
+							<select bind:value={systemSettings.sound_alert_patient_admitted}>
+								<option value="true">🔊 Con Sonido</option>
+								<option value="false">🔇 Silencioso</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="setting-row">
+						<div class="setting-info">
+							<span class="setting-title">📤 Alta de Paciente (Egreso)</span>
+							<span class="setting-help">Se reproduce cuando se egresa al paciente y se libera la cama.</span>
+						</div>
+						<div class="setting-input">
+							<select bind:value={systemSettings.sound_alert_patient_discharged}>
+								<option value="true">🔊 Con Sonido</option>
+								<option value="false">🔇 Silencioso</option>
+							</select>
+						</div>
+					</div>
+
 					{#if formError}
 						<div class="error-alert">{formError}</div>
 					{/if}

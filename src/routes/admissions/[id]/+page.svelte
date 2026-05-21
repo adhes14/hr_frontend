@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { getAdmission, getBedPatient, getBed, listClinicalLogs } from '$lib/api/client';
-	import type { Admission, Patient, Bed, ClinicalLog } from '$lib/api/client';
+	import { getAdmission, getBedPatient, getBed, listClinicalLogs, listOrdersByAdmission, createOrder, updateOrderStatus, deleteOrder } from '$lib/api/client';
+	import type { Admission, Patient, Bed, ClinicalLog, AuxiliaryOrder } from '$lib/api/client';
 	import EventTypeSelector from '$lib/components/EventTypeSelector.svelte';
 	import ControlStatusBadge from '$lib/components/ControlStatusBadge.svelte';
 	import DischargeButton from '$lib/components/DischargeButton.svelte';
@@ -13,8 +13,24 @@
 	let patient = $state<Patient | null>(null);
 	let bed = $state<Bed | null>(null);
 	let clinicalLogs = $state<ClinicalLog[]>([]);
+	let orders = $state<AuxiliaryOrder[]>([]);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
+
+	// Order Form State
+	let showOrderForm = $state(false);
+	let newOrderCategory = $state<'laboratorio' | 'imagen' | 'procedimiento'>('laboratorio');
+	let newOrderDescription = $state('');
+	let submittingOrder = $state(false);
+
+	import { currentUser } from '$lib/auth';
+	import { ordersUpdateTrigger } from '$lib/sse';
+
+	$effect(() => {
+		if ($ordersUpdateTrigger > 0) {
+			loadOrders();
+		}
+	});
 
 	$effect(() => {
 		loadData();
@@ -27,13 +43,15 @@
 		error = null;
 
 		try {
-			const [admissionData, logsData] = await Promise.all([
+			const [admissionData, logsData, ordersData] = await Promise.all([
 				getAdmission(admissionId),
-				listClinicalLogs(admissionId)
+				listClinicalLogs(admissionId),
+				listOrdersByAdmission(admissionId)
 			]);
 
 			admission = admissionData;
 			clinicalLogs = logsData;
+			orders = ordersData;
 
 			if (admission?.bed_id) {
 				try {
@@ -80,6 +98,54 @@
 
 	function formatVital(vital: number, unit: string): string {
 		return `${vital} ${unit}`;
+	}
+
+	async function loadOrders() {
+		if (!admissionId) return;
+		try {
+			orders = await listOrdersByAdmission(admissionId);
+		} catch (e) {
+			console.error('Failed to reload orders:', e);
+		}
+	}
+
+	async function handleCreateOrder(e: Event) {
+		e.preventDefault();
+		if (!newOrderDescription.trim() || !admissionId) return;
+		
+		submittingOrder = true;
+		try {
+			await createOrder(admissionId, {
+				category: newOrderCategory,
+				description: newOrderDescription.trim()
+			});
+			showOrderForm = false;
+			newOrderDescription = '';
+			await loadOrders();
+		} catch (e) {
+			alert(e instanceof Error ? e.message : 'Error al crear orden');
+		} finally {
+			submittingOrder = false;
+		}
+	}
+
+	async function handleOrderStatus(orderId: number, status: 'pending' | 'done' | 'reported') {
+		try {
+			await updateOrderStatus(orderId, { status });
+			await loadOrders();
+		} catch (e) {
+			alert(e instanceof Error ? e.message : 'Error al actualizar estado');
+		}
+	}
+
+	async function handleDeleteOrder(orderId: number) {
+		if (!confirm('¿Seguro que desea eliminar esta orden?')) return;
+		try {
+			await deleteOrder(orderId);
+			await loadOrders();
+		} catch (e) {
+			alert(e instanceof Error ? e.message : 'Error al eliminar orden');
+		}
 	}
 </script>
 
@@ -193,6 +259,87 @@
 								{#if log.notes}
 									<p class="log-notes">{log.notes}</p>
 								{/if}
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</section>
+
+			<!-- Auxiliary Orders Section -->
+			<section class="section">
+				<div class="section-header">
+					<h2>Órdenes Auxiliares</h2>
+					{#if admission.status === 'active'}
+						<button class="btn-add-order" onclick={() => showOrderForm = !showOrderForm}>
+							{showOrderForm ? 'Cancelar' : '+ Nueva Orden'}
+						</button>
+					{/if}
+				</div>
+
+				{#if showOrderForm}
+					<form class="order-form" onsubmit={handleCreateOrder}>
+						<div class="form-group">
+							<label for="category">Categoría</label>
+							<select id="category" bind:value={newOrderCategory} required>
+								<option value="laboratorio">Laboratorio</option>
+								<option value="imagen">Imagen</option>
+								<option value="procedimiento">Procedimiento</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="description">Descripción (max 150)</label>
+							<input 
+								type="text" 
+								id="description" 
+								bind:value={newOrderDescription} 
+								maxlength="150" 
+								required 
+								placeholder="Ej: Ecografía abdominal"
+							/>
+						</div>
+						<button type="submit" class="btn-submit" disabled={submittingOrder}>
+							{submittingOrder ? 'Guardando...' : 'Crear Orden'}
+						</button>
+					</form>
+				{/if}
+
+				{#if orders.length === 0}
+					<p class="no-logs">No hay órdenes registradas</p>
+				{:else}
+					<div class="logs-list">
+						{#each orders as order (order.id)}
+							<div class="log-entry order-entry">
+								<div class="order-header">
+									<div class="order-title">
+										<span class="badge badge-{order.category}">{order.category}</span>
+										<span class="order-desc">{order.description}</span>
+									</div>
+									<div class="order-meta">
+										<span class="log-time">{formatDateTime(order.created_at)}</span>
+										<span class="log-author">por {order.created_by_name}</span>
+									</div>
+								</div>
+								
+								<div class="order-footer">
+									<div class="status-indicator status-{order.status}">
+										{order.status === 'pending' ? 'Pendiente' : order.status === 'done' ? 'Realizado' : 'Reportado'}
+									</div>
+									
+									<div class="order-actions">
+										{#if order.status === 'pending'}
+											<button class="btn-mini done" onclick={() => handleOrderStatus(order.id, 'done')}>Realizado</button>
+										{/if}
+										{#if order.status === 'pending' || order.status === 'done'}
+											<button class="btn-mini reported" onclick={() => handleOrderStatus(order.id, 'reported')}>Reportado</button>
+										{/if}
+										{#if order.status !== 'pending'}
+											<button class="btn-mini pending" onclick={() => handleOrderStatus(order.id, 'pending')}>Pendiente</button>
+										{/if}
+										{#if $currentUser?.role === 'admin'}
+											<button class="btn-mini delete" onclick={() => handleDeleteOrder(order.id)}>🗑️</button>
+										{/if}
+									</div>
+								</div>
 							</div>
 						{/each}
 					</div>
@@ -416,5 +563,145 @@
 
 	.discharge-section {
 		background: #fafafa;
+	}
+
+	.section-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 1rem;
+	}
+
+	.section-header h2 {
+		margin: 0;
+	}
+
+	.btn-add-order {
+		background: var(--info-bg);
+		color: var(--primary);
+		border: 1px solid var(--primary);
+		padding: 0.25rem 0.75rem;
+		border-radius: 4px;
+		font-size: 0.875rem;
+		cursor: pointer;
+	}
+
+	.order-form {
+		background: var(--background);
+		padding: 1rem;
+		border-radius: 8px;
+		margin-bottom: 1.5rem;
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		border: 1px solid var(--border-color);
+	}
+
+	.form-group {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.form-group label {
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--text-main);
+	}
+
+	.form-group select, .form-group input {
+		padding: 0.5rem;
+		border: 1px solid var(--border-color);
+		border-radius: 4px;
+		font-size: 1rem;
+	}
+
+	.btn-submit {
+		background: var(--primary);
+		color: white;
+		border: none;
+		padding: 0.75rem;
+		border-radius: 4px;
+		font-weight: 600;
+		cursor: pointer;
+	}
+
+	.btn-submit:disabled {
+		opacity: 0.7;
+	}
+
+	.order-entry {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.order-header {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.order-title {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.badge-laboratorio { background: #e0f2fe; color: #0284c7; }
+	.badge-imagen { background: #fef08a; color: #a16207; }
+	.badge-procedimiento { background: #fce7f3; color: #be185d; }
+
+	.order-desc {
+		font-weight: 500;
+	}
+
+	.order-footer {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		padding-top: 0.5rem;
+		border-top: 1px dashed var(--border-color);
+	}
+
+	.status-indicator {
+		font-size: 0.75rem;
+		font-weight: bold;
+		text-transform: uppercase;
+		padding: 0.25rem 0.5rem;
+		border-radius: 4px;
+	}
+
+	.status-pending { background: #fee2e2; color: #991b1b; }
+	.status-done { background: #dcfce7; color: #166534; }
+	.status-reported { background: #dbeafe; color: #1e40af; }
+
+	.order-actions {
+		display: flex;
+		gap: 0.25rem;
+	}
+
+	.btn-mini {
+		padding: 0.25rem 0.5rem;
+		font-size: 0.75rem;
+		border-radius: 4px;
+		border: none;
+		cursor: pointer;
+		font-weight: 600;
+	}
+
+	.btn-mini.done { background: #dcfce7; color: #166534; }
+	.btn-mini.reported { background: #dbeafe; color: #1e40af; }
+	.btn-mini.pending { background: #f1f5f9; color: #475569; }
+	.btn-mini.delete { background: transparent; border: 1px solid var(--danger); font-size: 1rem; padding: 0.1rem 0.3rem;}
+
+	@media (min-width: 640px) {
+		.order-header {
+			flex-direction: row;
+			justify-content: space-between;
+			align-items: flex-start;
+		}
 	}
 </style>

@@ -79,6 +79,32 @@ export interface ClinicalLog {
 	notes: string | null;
 }
 
+export interface AuxiliaryOrder {
+	id: number;
+	admission_id: string;
+	category: 'laboratorio' | 'imagen' | 'procedimiento';
+	description: string;
+	status: 'pending' | 'done' | 'reported';
+	created_by?: string;
+	created_by_name?: string;
+	updated_by?: string;
+	updated_by_name?: string;
+	created_at: string;
+	updated_at: string;
+	patient_name?: string;
+	bed_number?: number;
+	bed_prefix?: string;
+}
+
+export interface CreateOrderInput {
+	category: 'laboratorio' | 'imagen' | 'procedimiento';
+	description: string;
+}
+
+export interface UpdateOrderStatusInput {
+	status: 'pending' | 'done' | 'reported';
+}
+
 export interface CreateClinicalLogInput {
 	pa_systolic: number;
 	pa_diastolic: number;
@@ -287,6 +313,35 @@ export async function createClinicalLog(admissionId: string, input: CreateClinic
 
 export async function listClinicalLogs(admissionId: string): Promise<ClinicalLog[]> {
 	return fetchJSON<ClinicalLog[]>(`/admissions/${admissionId}/clinical-logs`);
+}
+
+// Auxiliary Orders
+export async function createOrder(admissionId: string, input: CreateOrderInput): Promise<AuxiliaryOrder> {
+	return fetchJSON<AuxiliaryOrder>(`/admissions/${admissionId}/orders`, {
+		method: 'POST',
+		body: JSON.stringify(input)
+	});
+}
+
+export async function listOrdersByAdmission(admissionId: string): Promise<AuxiliaryOrder[]> {
+	return fetchJSON<AuxiliaryOrder[]>(`/admissions/${admissionId}/orders`);
+}
+
+export async function listPendingOrders(): Promise<AuxiliaryOrder[]> {
+	return fetchJSON<AuxiliaryOrder[]>('/orders/pending');
+}
+
+export async function updateOrderStatus(orderId: number, input: UpdateOrderStatusInput): Promise<void> {
+	await fetchJSON(`/orders/${orderId}/status`, {
+		method: 'PUT',
+		body: JSON.stringify(input)
+	});
+}
+
+export async function deleteOrder(orderId: number): Promise<void> {
+	await fetchJSON(`/orders/${orderId}`, {
+		method: 'DELETE'
+	});
 }
 
 // Users (Admin only)

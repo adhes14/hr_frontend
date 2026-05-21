@@ -6,7 +6,8 @@
 	import { restoreSession, currentUser, token, clearSession } from '$lib/auth';
 	import { goto } from '$app/navigation';
 	import { pwaInfo } from 'virtual:pwa-info';
-	import { connectSSE, disconnectSSE, requestNotificationPermission } from '$lib/sse';
+	import { connectSSE, disconnectSSE, requestNotificationPermission, pendingOrdersCount, ordersUpdateTrigger } from '$lib/sse';
+	import { listPendingOrders } from '$lib/api/client';
 
 	let { children }: { children: Snippet } = $props();
 
@@ -20,7 +21,24 @@
 		restoreSession();
 		authChecked = true;
 		requestNotificationPermission();
+		updatePendingCount();
 	});
+
+	$effect(() => {
+		if ($ordersUpdateTrigger > 0) {
+			updatePendingCount();
+		}
+	});
+
+	async function updatePendingCount() {
+		if (!$token) return;
+		try {
+			const pending = await listPendingOrders();
+			pendingOrdersCount.set(pending.length);
+		} catch (e) {
+			console.error('Failed to get pending orders count', e);
+		}
+	}
 
 	$effect(() => {
 		if (authChecked) {
@@ -72,6 +90,12 @@
 				<nav class="desktop-nav">
 					<a href="/" class:active={pathname === '/'}>🏠 Camas</a>
 					<a href="/patients" class:active={pathname.startsWith('/patients')}>👥 Pacientes</a>
+					<a href="/pendientes" class:active={pathname.startsWith('/pendientes')}>
+						📋 Pendientes
+						{#if $pendingOrdersCount > 0}
+							<span class="nav-badge">{$pendingOrdersCount}</span>
+						{/if}
+					</a>
 					{#if $currentUser?.role === 'admin'}
 						<a href="/admin" class:active={pathname.startsWith('/admin')}>⚙️ Panel Admin</a>
 					{/if}
@@ -89,6 +113,12 @@
 			<nav class="mobile-nav">
 				<a href="/" class:active={pathname === '/'} onclick={closeMenu}>🏠 Camas</a>
 				<a href="/patients" class:active={pathname.startsWith('/patients')} onclick={closeMenu}>👥 Pacientes</a>
+				<a href="/pendientes" class:active={pathname.startsWith('/pendientes')} onclick={closeMenu}>
+					📋 Pendientes
+					{#if $pendingOrdersCount > 0}
+						<span class="nav-badge">{$pendingOrdersCount}</span>
+					{/if}
+				</a>
 				{#if $currentUser?.role === 'admin'}
 					<a href="/admin" class:active={pathname.startsWith('/admin')} onclick={closeMenu}>⚙️ Panel Admin</a>
 				{/if}
@@ -316,6 +346,16 @@
 		.desktop-nav a.active {
 			color: var(--primary);
 			background: var(--info-bg);
+		}
+
+		.nav-badge {
+			background: #e74c3c;
+			color: white;
+			border-radius: 9999px;
+			padding: 0.125rem 0.375rem;
+			font-size: 0.75rem;
+			font-weight: bold;
+			margin-left: 0.25rem;
 		}
 
 		.desktop-user {

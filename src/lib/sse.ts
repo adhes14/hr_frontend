@@ -10,6 +10,8 @@ export const connectionStatus = writable<'connected' | 'disconnected' | 'connect
 export const overdueAlerts = writable<Record<number, { admission_id: string; next_control_at: string; patient_name: string; bed_number: number }>>({});
 export const dischargeReadyAlerts = writable<Record<number, { admission_id: string; estimated_discharge_at: string; patient_name: string; bed_number: number }>>({});
 export const bedUpdateTrigger = writable<number>(0);
+export const ordersUpdateTrigger = writable<number>(0);
+export const pendingOrdersCount = writable<number>(0);
 
 export async function loadSettings() {
 	try {
@@ -97,7 +99,11 @@ export async function connectSSE() {
 				const data = JSON.parse(e.data);
 				console.log('SSE discharge_ready event:', data);
 
+				let isNewAlert = false;
 				dischargeReadyAlerts.update(alerts => {
+					if (!alerts[data.bed_id] || alerts[data.bed_id].admission_id !== data.admission_id) {
+						isNewAlert = true;
+					}
 					alerts[data.bed_id] = {
 						admission_id: data.admission_id,
 						estimated_discharge_at: data.estimated_discharge_at,
@@ -107,14 +113,16 @@ export async function connectSSE() {
 					return { ...alerts };
 				});
 
-				if (isSoundEnabled('sound_alert_discharge_ready')) {
+				if (isNewAlert && data.sound) {
 					playNotificationSound();
 				}
 
-				showBrowserNotification(
-					'ℹ️ Paciente Alta Lista',
-					`Cama ${data.bed_number}: ${data.patient_name} está lista para el alta.`
-				);
+				if (isNewAlert) {
+					showBrowserNotification(
+						'ℹ️ Paciente Alta Lista',
+						`Cama ${data.bed_number}: ${data.patient_name} está lista para el alta.`
+					);
+				}
 			} catch (err) {
 				console.error('Failed to parse discharge_ready event data', err);
 			}
@@ -126,14 +134,10 @@ export async function connectSSE() {
 				console.log('SSE bed_updated event:', data);
 				bedUpdateTrigger.update(val => val + 1);
 
-				if (data.action === 'admitted') {
-					if (isSoundEnabled('sound_alert_patient_admitted')) {
-						playNotificationSound();
-					}
-				} else if (data.action === 'discharged') {
-					if (isSoundEnabled('sound_alert_patient_discharged')) {
-						playNotificationSound();
-					}
+				if (data.action === 'admitted' && data.sound) {
+					playNotificationSound();
+				} else if (data.action === 'discharged' && data.sound) {
+					playNotificationSound();
 				}
 			} catch (err) {
 				console.error('Failed to parse bed_updated event data', err);
@@ -167,6 +171,16 @@ export async function connectSSE() {
 			} catch (err) {
 				console.error('Failed to parse alert_cleared event data', err);
 			}
+		});
+
+		eventSource.addEventListener('orders_updated', (e: MessageEvent) => {
+			console.log('SSE orders_updated event');
+			ordersUpdateTrigger.update(val => val + 1);
+		});
+
+		eventSource.addEventListener('settings_updated', (e: MessageEvent) => {
+			console.log('SSE settings_updated event');
+			loadSettings();
 		});
 
 	} catch (err) {
