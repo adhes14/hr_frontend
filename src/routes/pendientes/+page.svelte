@@ -51,11 +51,12 @@
 
 	// Agrupar por cama
 	let groupedOrders = $derived(() => {
-		const groups: Record<number, { bed_number: number; bed_prefix: string; patient_name: string; orders: AuxiliaryOrder[] }> = {};
+		const groups: Record<number, { admission_id: string; bed_number: number; bed_prefix: string; patient_name: string; orders: AuxiliaryOrder[] }> = {};
 		for (const order of orders) {
 			const key = order.bed_number || 0;
 			if (!groups[key]) {
 				groups[key] = {
+					admission_id: order.admission_id,
 					bed_number: order.bed_number!,
 					bed_prefix: order.bed_prefix!,
 					patient_name: order.patient_name!,
@@ -97,8 +98,10 @@
 			{#each groupedOrders() as group}
 				<div class="bed-group">
 					<div class="group-header">
-						<span class="bed-badge">{group.bed_prefix}-{group.bed_number}</span>
-						<span class="patient-name">{group.patient_name}</span>
+						<a href="/admissions/{group.admission_id}" class="group-link">
+							<span class="bed-badge">{group.bed_prefix}-{group.bed_number}</span>
+							<span class="patient-name">{group.patient_name}</span>
+						</a>
 					</div>
 					
 					<div class="orders-list">
@@ -210,6 +213,24 @@
 		align-items: center;
 		gap: 1rem;
 		border-bottom: 1px solid var(--border-color);
+	}
+
+	.group-link {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		text-decoration: none;
+		color: inherit;
+		cursor: pointer;
+	}
+
+	.group-link:hover .patient-name {
+		text-decoration: underline;
+		color: var(--primary);
+	}
+
+	.group-link:hover .bed-badge {
+		opacity: 0.9;
 	}
 
 	.bed-badge {

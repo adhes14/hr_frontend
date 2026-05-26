@@ -311,6 +311,17 @@
 		min-height: calc(100vh - 60px);
 	}
 
+	.nav-badge {
+		background: #e74c3c;
+		color: white;
+		border-radius: 9999px;
+		padding: 0.125rem 0.375rem;
+		font-size: 0.75rem;
+		font-weight: bold;
+		margin-left: 0.25rem;
+		display: inline-block;
+	}
+
 	/* Desktop Adjustments */
 	@media (min-width: 768px) {
 		.hamburger {
@@ -346,16 +357,6 @@
 		.desktop-nav a.active {
 			color: var(--primary);
 			background: var(--info-bg);
-		}
-
-		.nav-badge {
-			background: #e74c3c;
-			color: white;
-			border-radius: 9999px;
-			padding: 0.125rem 0.375rem;
-			font-size: 0.75rem;
-			font-weight: bold;
-			margin-left: 0.25rem;
 		}
 
 		.desktop-user {

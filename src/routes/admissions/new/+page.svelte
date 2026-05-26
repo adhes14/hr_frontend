@@ -13,6 +13,7 @@
 	let loading = $state(false);
 	let loadingBeds = $state(true);
 	let error = $state<string | null>(null);
+	let admissionDiagnosis = $state('');
 
 	// Get pre-selected values from URL params
 	$effect(() => {
@@ -76,6 +77,10 @@
 			error = 'Selecciona una cama y un paciente';
 			return;
 		}
+		if (!admissionDiagnosis.trim()) {
+			error = 'El diagnóstico de ingreso es obligatorio';
+			return;
+		}
 
 		loading = true;
 		error = null;
@@ -83,7 +88,8 @@
 		try {
 			await createAdmission({
 				patient_id: selectedPatientId,
-				bed_id: selectedBedId
+				bed_id: selectedBedId,
+				admission_diagnosis: admissionDiagnosis.trim()
 			});
 
 			goto('/');
@@ -181,7 +187,19 @@
 			{/if}
 		</div>
 
-		<button type="submit" class="btn-submit" disabled={loading || !selectedBedId || !selectedPatientId || selectedPatient?.is_admitted}>
+		<!-- Admission Diagnosis -->
+		<div class="field">
+			<label for="admission-diagnosis">Diagnóstico de Ingreso</label>
+			<textarea
+				id="admission-diagnosis"
+				placeholder="Ingrese el diagnóstico de ingreso..."
+				bind:value={admissionDiagnosis}
+				rows="3"
+				required
+			></textarea>
+		</div>
+
+		<button type="submit" class="btn-submit" disabled={loading || !selectedBedId || !selectedPatientId || selectedPatient?.is_admitted || !admissionDiagnosis.trim()}>
 			{loading ? 'Internando...' : 'Internar Paciente'}
 		</button>
 	</form>
@@ -227,16 +245,18 @@
 		color: #333;
 	}
 
-	select, input {
+	select, input, textarea {
 		width: 100%;
 		padding: 0.75rem;
 		border: 2px solid #ddd;
 		border-radius: 8px;
 		font-size: 1rem;
 		background: white;
+		font-family: inherit;
+		resize: vertical;
 	}
 
-	select:focus, input:focus {
+	select:focus, input:focus, textarea:focus {
 		outline: none;
 		border-color: #1a1a2e;
 	}

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { getAdmission, getBedPatient, getBed, listClinicalLogs, listOrdersByAdmission, createOrder, updateOrderStatus, deleteOrder } from '$lib/api/client';
+	import { getAdmission, getBedPatient, getBed, listClinicalLogs, listOrdersByAdmission, createOrder, updateOrderStatus, deleteOrder, updateAdmissionDiagnosis } from '$lib/api/client';
 	import type { Admission, Patient, Bed, ClinicalLog, AuxiliaryOrder } from '$lib/api/client';
 	import EventTypeSelector from '$lib/components/EventTypeSelector.svelte';
 	import ControlStatusBadge from '$lib/components/ControlStatusBadge.svelte';
@@ -16,6 +16,35 @@
 	let orders = $state<AuxiliaryOrder[]>([]);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
+
+	// Diagnosis Edit State
+	let editingDiagnosis = $state(false);
+	let tempCurrentDiagnosis = $state('');
+	let savingDiagnosis = $state(false);
+
+	function startEditingDiagnosis() {
+		if (!admission) return;
+		tempCurrentDiagnosis = admission.current_diagnosis;
+		editingDiagnosis = true;
+	}
+
+	function cancelEditingDiagnosis() {
+		editingDiagnosis = false;
+	}
+
+	async function handleSaveDiagnosis() {
+		if (!admission || !tempCurrentDiagnosis.trim()) return;
+		savingDiagnosis = true;
+		try {
+			const updatedAdmission = await updateAdmissionDiagnosis(admission.id, tempCurrentDiagnosis.trim());
+			admission = updatedAdmission;
+			editingDiagnosis = false;
+		} catch (e) {
+			alert(e instanceof Error ? e.message : 'Error al guardar el diagnóstico');
+		} finally {
+			savingDiagnosis = false;
+		}
+	}
 
 	// Order Form State
 	let showOrderForm = $state(false);
@@ -186,6 +215,51 @@
 				</section>
 			{/if}
 
+			<!-- Diagnosis Section -->
+			<section class="section diagnosis-section">
+				<h2>Diagnóstico</h2>
+				<div class="diagnosis-details">
+					<div class="diagnosis-item">
+						<p><strong>Diagnóstico de Ingreso:</strong></p>
+						<p class="diagnosis-text">{admission.admission_diagnosis || '-'}</p>
+					</div>
+
+					<div class="diagnosis-item">
+						<p><strong>Diagnóstico Actual:</strong></p>
+						{#if editingDiagnosis}
+							<div class="edit-diagnosis-form">
+								<textarea
+									bind:value={tempCurrentDiagnosis}
+									placeholder="Ingrese el diagnóstico actual..."
+									rows="3"
+									required
+								></textarea>
+								<div class="edit-actions">
+									<button class="btn-save" onclick={handleSaveDiagnosis} disabled={savingDiagnosis || !tempCurrentDiagnosis.trim()}>
+										{savingDiagnosis ? 'Guardando...' : 'Guardar'}
+									</button>
+									<button class="btn-cancel-edit" onclick={cancelEditingDiagnosis} disabled={savingDiagnosis}>
+										Cancelar
+									</button>
+								</div>
+							</div>
+						{:else}
+							<div class="view-diagnosis">
+								<p class="diagnosis-text">{admission.current_diagnosis || '-'}</p>
+								{#if admission.current_diagnosis_updated_by_name}
+									<span class="modifier-info">Modificado por {admission.current_diagnosis_updated_by_name}</span>
+								{/if}
+								{#if admission.status === 'active'}
+									<button type="button" class="btn-edit-diag" onclick={startEditingDiagnosis}>
+										✏️ Editar
+									</button>
+								{/if}
+							</div>
+						{/if}
+					</div>
+				</div>
+			</section>
+
 		<!-- Event Section - only for beds that require postpartum follow-up -->
 		{#if bed?.bed_type?.requires_postpartum_followup}
 			<section class="section">
@@ -219,51 +293,53 @@
 		{/if}
 
 			<!-- Clinical Logs History -->
-			<section class="section">
-				<h2>Historial de Controles</h2>
-				{#if clinicalLogs.length === 0}
-					<p class="no-logs">No hay controles registrados</p>
-				{:else}
-					<div class="logs-list">
-						{#each clinicalLogs as log (log.id)}
-							<div class="log-entry">
-								<div class="log-header">
-									<span class="log-time">{formatDateTime(log.created_at)}</span>
-									{#if log.created_by_name}
-										<span class="log-author">por {log.created_by_name}</span>
+			{#if bed?.bed_type?.requires_postpartum_followup}
+				<section class="section">
+					<h2>Historial de Controles</h2>
+					{#if clinicalLogs.length === 0}
+						<p class="no-logs">No hay controles registrados</p>
+					{:else}
+						<div class="logs-list">
+							{#each clinicalLogs as log (log.id)}
+								<div class="log-entry">
+									<div class="log-header">
+										<span class="log-time">{formatDateTime(log.created_at)}</span>
+										{#if log.created_by_name}
+											<span class="log-author">por {log.created_by_name}</span>
+										{/if}
+									</div>
+									<div class="log-vitals">
+										<span title="PA Sistólica">{formatVital(log.pa_systolic, 'mmHg')}</span>
+										<span title="PA Diastólica">{formatVital(log.pa_diastolic, 'mmHg')}</span>
+										<span title="Frecuencia Cardíaca">FC: {formatVital(log.heart_rate, 'bpm')}</span>
+										<span title="Frecuencia Respiratoria">FR: {formatVital(log.resp_rate, 'rpm')}</span>
+										<span title="Temperatura">Temp: {log.temperature}°C</span>
+										<span title="SpO2">SpO2: {formatVital(log.spo2, '%')}</span>
+									</div>
+									<div class="log-obstetric">
+										{#if log.pinard_status}
+											<span class="badge ok">Pinard OK</span>
+										{:else}
+											<span class="badge warning">Pinard No Satisfactorio</span>
+										{/if}
+										<span>Loquios: {['-', 'Hemático', 'Serosa', 'Alba'][log.lochia_type]}</span>
+										<span>Cantidad: {['-', 'Escaso', 'Moderado', 'Abundante'][log.lochia_amount]}</span>
+										{#if !log.lochia_odor}
+											<span class="badge warning">Loquios Fétidos</span>
+										{/if}
+										{#if log.has_clots}
+											<span class="badge warning">Coágulos</span>
+										{/if}
+									</div>
+									{#if log.notes}
+										<p class="log-notes">{log.notes}</p>
 									{/if}
 								</div>
-								<div class="log-vitals">
-									<span title="PA Sistólica">{formatVital(log.pa_systolic, 'mmHg')}</span>
-									<span title="PA Diastólica">{formatVital(log.pa_diastolic, 'mmHg')}</span>
-									<span title="Frecuencia Cardíaca">FC: {formatVital(log.heart_rate, 'bpm')}</span>
-									<span title="Frecuencia Respiratoria">FR: {formatVital(log.resp_rate, 'rpm')}</span>
-									<span title="Temperatura">Temp: {log.temperature}°C</span>
-									<span title="SpO2">SpO2: {formatVital(log.spo2, '%')}</span>
-								</div>
-								<div class="log-obstetric">
-									{#if log.pinard_status}
-										<span class="badge ok">Pinard OK</span>
-									{:else}
-										<span class="badge warning">Pinard No Satisfactorio</span>
-									{/if}
-									<span>Loquios: {['-', 'Hemático', 'Serosa', 'Alba'][log.lochia_type]}</span>
-									<span>Cantidad: {['-', 'Escaso', 'Moderado', 'Abundante'][log.lochia_amount]}</span>
-									{#if !log.lochia_odor}
-										<span class="badge warning">Loquios Fétidos</span>
-									{/if}
-									{#if log.has_clots}
-										<span class="badge warning">Coágulos</span>
-									{/if}
-								</div>
-								{#if log.notes}
-									<p class="log-notes">{log.notes}</p>
-								{/if}
-							</div>
-						{/each}
-					</div>
-				{/if}
-			</section>
+							{/each}
+						</div>
+					{/if}
+				</section>
+			{/if}
 
 			<!-- Auxiliary Orders Section -->
 			<section class="section">
@@ -446,6 +522,114 @@
 	.patient-details p {
 		margin: 0;
 		color: #555;
+	}
+
+	.diagnosis-section .diagnosis-details {
+		display: flex;
+		flex-direction: column;
+		gap: 1.25rem;
+	}
+
+	.diagnosis-item {
+		background: #fcfcfc;
+		border: 1px solid #f1f1f1;
+		border-radius: 8px;
+		padding: 0.75rem 1rem;
+	}
+
+	.diagnosis-item p {
+		margin: 0;
+	}
+
+	.diagnosis-text {
+		font-size: 1.05rem;
+		color: #2c3e50;
+		margin-top: 0.25rem !important;
+		white-space: pre-wrap;
+	}
+
+	.view-diagnosis {
+		position: relative;
+	}
+
+	.modifier-info {
+		display: block;
+		font-size: 0.75rem;
+		color: #7f8c8d;
+		margin-top: 0.5rem;
+		font-style: italic;
+	}
+
+	.btn-edit-diag {
+		margin-top: 0.75rem;
+		background: var(--surface);
+		border: 1px solid var(--border-color);
+		color: var(--secondary);
+		padding: 0.35rem 0.75rem;
+		border-radius: var(--border-radius-sm);
+		cursor: pointer;
+		font-size: 0.85rem;
+		font-weight: 500;
+		transition: all 0.2s ease;
+	}
+
+	.btn-edit-diag:hover {
+		background: var(--info-bg);
+		color: var(--primary);
+		border-color: var(--primary);
+	}
+
+	.edit-diagnosis-form {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		margin-top: 0.5rem;
+	}
+
+	.edit-diagnosis-form textarea {
+		width: 100%;
+		padding: 0.75rem;
+		border: 2px solid var(--border-color);
+		border-radius: var(--border-radius-md);
+		font-size: 1rem;
+		font-family: inherit;
+		background: white;
+		resize: vertical;
+	}
+
+	.edit-diagnosis-form textarea:focus {
+		outline: none;
+		border-color: var(--primary);
+	}
+
+	.edit-actions {
+		display: flex;
+		gap: 0.5rem;
+	}
+
+	.btn-save {
+		background: var(--primary);
+		color: white;
+		border: none;
+		padding: 0.5rem 1rem;
+		border-radius: var(--border-radius-sm);
+		font-weight: 600;
+		cursor: pointer;
+	}
+
+	.btn-save:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	.btn-cancel-edit {
+		background: var(--text-muted);
+		color: white;
+		border: none;
+		padding: 0.5rem 1rem;
+		border-radius: var(--border-radius-sm);
+		font-weight: 600;
+		cursor: pointer;
 	}
 
 	.patient-details strong {

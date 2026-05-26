@@ -57,6 +57,10 @@ export interface Admission {
 	estimated_discharge_at: string | null;
 	created_at: string;
 	discharged_at: string | null;
+	admission_diagnosis: string;
+	current_diagnosis: string;
+	current_diagnosis_updated_by?: string | null;
+	current_diagnosis_updated_by_name?: string | null;
 }
 
 export interface ClinicalLog {
@@ -280,6 +284,7 @@ export async function updatePatient(id: string, data: {
 export async function createAdmission(data: {
 	patient_id: string;
 	bed_id: number;
+	admission_diagnosis: string;
 }): Promise<Admission> {
 	return fetchJSON<Admission>('/admissions', {
 		method: 'POST',
@@ -290,6 +295,13 @@ export async function createAdmission(data: {
 export async function dischargeAdmission(admissionId: string): Promise<void> {
 	await fetchJSON(`/admissions/${admissionId}/discharge`, {
 		method: 'PUT'
+	});
+}
+
+export async function updateAdmissionDiagnosis(admissionId: string, currentDiagnosis: string): Promise<Admission> {
+	return fetchJSON<Admission>(`/admissions/${admissionId}/diagnosis`, {
+		method: 'PUT',
+		body: JSON.stringify({ current_diagnosis: currentDiagnosis })
 	});
 }
 
