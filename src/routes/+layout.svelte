@@ -90,6 +90,7 @@
 				<nav class="desktop-nav">
 					<a href="/" class:active={pathname === '/'}>🏠 Camas</a>
 					<a href="/patients" class:active={pathname.startsWith('/patients')}>👥 Pacientes</a>
+					<a href="/quirofano" class:active={pathname.startsWith('/quirofano')}>📅 Quirófano</a>
 					<a href="/pendientes" class:active={pathname.startsWith('/pendientes')}>
 						📋 Pendientes
 						{#if $pendingOrdersCount > 0}
@@ -113,6 +114,7 @@
 			<nav class="mobile-nav">
 				<a href="/" class:active={pathname === '/'} onclick={closeMenu}>🏠 Camas</a>
 				<a href="/patients" class:active={pathname.startsWith('/patients')} onclick={closeMenu}>👥 Pacientes</a>
+				<a href="/quirofano" class:active={pathname.startsWith('/quirofano')} onclick={closeMenu}>📅 Quirófano</a>
 				<a href="/pendientes" class:active={pathname.startsWith('/pendientes')} onclick={closeMenu}>
 					📋 Pendientes
 					{#if $pendingOrdersCount > 0}

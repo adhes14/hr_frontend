@@ -36,6 +36,18 @@ export interface Patient {
 	obstetric_history: Record<string, unknown>;
 	is_admitted: boolean;
 	current_admission_id: string | null;
+	scheduled_at?: string;
+}
+
+export interface SurgicalSchedule {
+	id: string;
+	patient_id: string;
+	patient_name?: string;
+	procedure_type: string;
+	scheduled_at: string;
+	pre_surgical_diagnosis: string;
+	created_at: string;
+	updated_at: string;
 }
 
 export interface PaginatedResponse<T> {
@@ -402,5 +414,47 @@ export async function updateSettings(settings: Record<string, string>): Promise<
 export async function getSSETicket(): Promise<{ ticket: string }> {
 	return fetchJSON<{ ticket: string }>('/auth/sse-ticket', {
 		method: 'POST'
+	});
+}
+
+// Surgical Schedules
+export async function createSurgicalSchedule(data: {
+	patient_id: string;
+	procedure_type: string;
+	scheduled_at: string;
+	pre_surgical_diagnosis: string;
+}): Promise<SurgicalSchedule> {
+	return fetchJSON<SurgicalSchedule>('/surgical-schedules', {
+		method: 'POST',
+		body: JSON.stringify(data)
+	});
+}
+
+export async function getSurgicalSchedulesByMonth(year: number, month: number): Promise<SurgicalSchedule[]> {
+	return fetchJSON<SurgicalSchedule[]>(`/surgical-schedules?year=${year}&month=${month}`);
+}
+
+export async function getSurgicalSchedulesByDate(date: string): Promise<SurgicalSchedule[]> {
+	return fetchJSON<SurgicalSchedule[]>(`/surgical-schedules/date?date=${encodeURIComponent(date)}`);
+}
+
+export async function getSurgicalScheduleByPatient(patientId: string): Promise<SurgicalSchedule | null> {
+	return fetchJSON<SurgicalSchedule | null>(`/surgical-schedules/patient/${patientId}`);
+}
+
+export async function updateSurgicalSchedule(id: string, data: {
+	procedure_type: string;
+	scheduled_at: string;
+	pre_surgical_diagnosis: string;
+}): Promise<SurgicalSchedule> {
+	return fetchJSON<SurgicalSchedule>(`/surgical-schedules/${id}`, {
+		method: 'PUT',
+		body: JSON.stringify(data)
+	});
+}
+
+export async function deleteSurgicalSchedule(id: string): Promise<{ status: string }> {
+	return fetchJSON<{ status: string }>(`/surgical-schedules/${id}`, {
+		method: 'DELETE'
 	});
 }

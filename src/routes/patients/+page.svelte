@@ -160,6 +160,21 @@
 		}
 	}
 
+	function formatScheduledDate(isoString?: string): string {
+		if (!isoString) return '';
+		try {
+			const d = new Date(isoString);
+			const day = d.getDate();
+			const monthNamesShort = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+			const month = monthNamesShort[d.getMonth()];
+			const hours = String(d.getHours()).padStart(2, '0');
+			const minutes = String(d.getMinutes()).padStart(2, '0');
+			return `${day} ${month} ${hours}:${minutes}`;
+		} catch (e) {
+			return '';
+		}
+	}
+
 	// Load on mount
 	$effect(() => {
 		loadPatients();
@@ -211,6 +226,7 @@
 						<th>Nombre</th>
 						<th>DNI</th>
 						<th>Fecha Nac.</th>
+						<th>Quirófano</th>
 						<th>Acciones</th>
 					</tr>
 				</thead>
@@ -220,6 +236,15 @@
 							<td class="font-medium text-main">{patient.full_name}</td>
 							<td class="text-muted">{patient.identity_number}</td>
 							<td class="text-muted">{patient.birth_date.split('T')[0]}</td>
+							<td>
+								{#if patient.scheduled_at}
+									<a href="/quirofano" class="badge-quirofano">
+										📅 {formatScheduledDate(patient.scheduled_at)}
+									</a>
+								{:else}
+									<span class="text-muted">-</span>
+								{/if}
+							</td>
 							<td class="col-actions">
 								<button class="btn-edit" onclick={() => openEditModal(patient)}>Editar</button>
 								{#if patient.is_admitted}
@@ -420,6 +445,26 @@
 		text-align: center;
 		color: #666;
 		padding: 2rem;
+	}
+
+	.badge-quirofano {
+		background: #fef3c7; /* light amber */
+		color: #d97706; /* dark amber */
+		border: 1px solid #fde68a;
+		padding: 0.25rem 0.6rem;
+		border-radius: 9999px;
+		font-size: 0.75rem;
+		font-weight: 600;
+		text-decoration: none;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		transition: all 0.2s ease;
+	}
+
+	.badge-quirofano:hover {
+		background: #fde68a;
+		color: #b45309;
 	}
 
 	/* Table Action Buttons */
