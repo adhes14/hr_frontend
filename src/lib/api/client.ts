@@ -292,6 +292,10 @@ export async function updatePatient(id: string, data: {
 	});
 }
 
+export async function getPatientAdmissions(patientId: string): Promise<Admission[]> {
+	return fetchJSON<Admission[]>(`/patients/${patientId}/admissions`);
+}
+
 // Admissions
 export async function createAdmission(data: {
 	patient_id: string;

@@ -247,6 +247,7 @@
 							</td>
 							<td class="col-actions">
 								<button class="btn-edit" onclick={() => openEditModal(patient)}>Editar</button>
+								<a href="/patients/{patient.id}" class="btn-historial">Historial</a>
 								{#if patient.is_admitted}
 									<a href="/admissions/{patient.current_admission_id}" class="btn-internado">Internado</a>
 								{:else}
@@ -520,6 +521,22 @@
 
 	.btn-internado:hover {
 		background: #2563eb;
+	}
+
+	.btn-historial {
+		background: #6b7280; /* slate gray */
+		color: white;
+		padding: 0.4rem 0.8rem;
+		border-radius: var(--border-radius-sm);
+		text-decoration: none;
+		font-size: 0.8rem;
+		font-weight: 500;
+		display: inline-block;
+		transition: background 0.2s ease;
+	}
+
+	.btn-historial:hover {
+		background: #4b5563;
 	}
 
 	/* Pagination */
