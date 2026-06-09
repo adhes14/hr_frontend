@@ -44,6 +44,9 @@
 		<button class="refresh-btn" onclick={loadBeds} disabled={loading}>
 			{loading ? 'Cargando...' : '🔄 Actualizar'}
 		</button>
+		<a href="/beds/history" class="btn btn-secondary" data-sveltekit-preload-data="hover">
+			📋 Historial de Camas
+		</a>
 	</div>
 
 	{#if error}
@@ -108,6 +111,28 @@
 	.refresh-btn:disabled {
 		opacity: 0.6;
 		cursor: not-allowed;
+	}
+
+	.btn-secondary {
+		background: var(--surface);
+		color: var(--secondary);
+		border: 1px solid var(--border-color);
+		padding: 0.75rem 1.25rem;
+		border-radius: var(--border-radius-md);
+		cursor: pointer;
+		font-size: 0.875rem;
+		font-weight: 600;
+		text-decoration: none;
+		text-align: center;
+		transition: all 0.2s ease;
+		display: inline-block;
+		align-self: flex-start;
+	}
+
+	.btn-secondary:hover {
+		background: var(--info-bg);
+		border-color: var(--primary);
+		color: var(--primary);
 	}
 
 	.beds-grid {

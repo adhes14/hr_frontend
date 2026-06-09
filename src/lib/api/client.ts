@@ -76,6 +76,12 @@ export interface Admission {
 	current_diagnosis_updated_by_name?: string | null;
 }
 
+export interface AdmissionHistoryItem extends Admission {
+	patient_name: string;
+	patient_dni: string;
+	clinical_log_count: number;
+}
+
 export interface ClinicalLog {
 	id: number;
 	admission_id: string;
@@ -254,6 +260,21 @@ export async function deleteBed(id: number): Promise<void> {
 
 export async function getBedPatient(bedId: number): Promise<Patient> {
 	return fetchJSON<Patient>(`/beds/${bedId}/patient`);
+}
+
+export async function listBedAdmissions(
+	bedId: number,
+	options: { page?: number; limit?: number; from?: string; to?: string } = {}
+): Promise<PaginatedResponse<AdmissionHistoryItem>> {
+	const params = new URLSearchParams();
+	if (options.page)  params.set('page',  String(options.page));
+	if (options.limit) params.set('limit', String(options.limit));
+	if (options.from)  params.set('from',  options.from);
+	if (options.to)    params.set('to',    options.to);
+	const qs = params.toString();
+	return fetchJSON<PaginatedResponse<AdmissionHistoryItem>>(
+		`/beds/${bedId}/admissions${qs ? `?${qs}` : ''}`
+	);
 }
 
 // Patients

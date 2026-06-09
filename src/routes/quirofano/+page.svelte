@@ -633,17 +633,42 @@
 		color: white;
 	}
 
-	.active-day.has-events {
-		font-weight: 700;
-		border-color: rgba(66, 153, 225, 0.4);
+	/* Selected + has-events: teal cell always wins.
+	   Specificity (0,3,0) beats .active-day.selected (0,2,0)
+	   and .active-day.has-events (0,2,0) regardless of source order. */
+	.active-day.has-events.selected {
+		background: var(--primary);
+		color: white;
 	}
 
+	/* has-events: soft red background replaces old blue border.
+	   Specificity (0,2,0). Hover and selected state override below. */
+	.active-day.has-events {
+		font-weight: 700;
+		background: var(--danger-bg);
+		border-color: var(--danger-bg);
+	}
+
+	/* Same-hue hover deepening for has-events days.
+	   Specificity (0,3,0) wins over .active-day:hover (0,2,0). */
+	.active-day.has-events:hover {
+		background: #fee2e2;
+	}
+
+	/* Selected + has-events + hover: keep the teal selection (defeats the hover deepening).
+	   Specificity (0,4,0) beats both (0,3,0) rules regardless of source order. */
+	.active-day.has-events.selected:hover {
+		background: var(--primary);
+	}
+
+	/* Red pill count badge. Only rendered inside {#if schedCount > 0},
+	   so every instance is on a has-events day. */
 	.event-indicator {
 		position: absolute;
 		bottom: 4px;
 		font-size: 0.65rem;
-		background: #e2e8f0;
-		color: #4a5568;
+		background: var(--danger);
+		color: white;
 		border-radius: 99px;
 		width: 16px;
 		height: 16px;
@@ -652,9 +677,12 @@
 		justify-content: center;
 	}
 
+	/* Selected has-events day: the teal cell background is guaranteed
+	   by .active-day.has-events.selected (0,3,0) above.
+	   The count pill becomes white with red text for legibility. */
 	.active-day.selected .event-indicator {
 		background: white;
-		color: var(--primary);
+		color: var(--danger);
 	}
 
 	/* Details Card styling */

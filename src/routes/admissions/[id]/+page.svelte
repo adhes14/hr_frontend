@@ -192,6 +192,11 @@
 		{:else}
 			<h1>Admisión</h1>
 		{/if}
+		{#if bed}
+			<a href={`/beds/history?bed=${bed.id}`} class="btn btn-secondary" data-sveltekit-preload-data="hover">
+				📋 Ver historial de la cama {bed.bed_type?.prefix ?? ''}{bed.number}
+			</a>
+		{/if}
 	</div>
 
 	{#if error}
@@ -457,6 +462,27 @@
 
 	.back-btn:hover {
 		background: #16213e;
+	}
+
+	.btn-secondary {
+		background: var(--surface, white);
+		color: var(--secondary, #1a1a2e);
+		border: 1px solid var(--border-color, #ddd);
+		padding: 0.5rem 1rem;
+		border-radius: 8px;
+		cursor: pointer;
+		font-size: 0.875rem;
+		font-weight: 600;
+		text-decoration: none;
+		transition: all 0.2s ease;
+		white-space: nowrap;
+		margin-left: auto;
+	}
+
+	.btn-secondary:hover {
+		background: var(--info-bg, #eff6ff);
+		border-color: var(--primary, #3b82f6);
+		color: var(--primary, #3b82f6);
 	}
 
 	h1 {
