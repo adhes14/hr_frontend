@@ -5,6 +5,7 @@ export interface User {
 	username: string;
 	full_name: string;
 	role: 'health_staff' | 'admin';
+	must_change_password: boolean;
 }
 
 export const currentUser = writable<User | null>(null);
@@ -51,6 +52,11 @@ export function isAuthenticated(): boolean {
 export function isAdmin(): boolean {
 	const user = get(currentUser);
 	return user !== null && user.role === 'admin';
+}
+
+export function isPasswordChangeRequired(): boolean {
+	const user = get(currentUser);
+	return user !== null && user.must_change_password === true;
 }
 
 export function getToken(): string | null {

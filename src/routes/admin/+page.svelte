@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import {
-		listUsers, createUser, changePassword, setUserActive, type Staff,
+		listUsers, createUser, resetPassword, updateStaff, setUserActive, type Staff,
 		getBeds, getBedTypes, createBed, updateBed, deleteBed, type Bed,
 		createBedType, updateBedType, deleteBedType, type BedType,
 		getSettings, updateSettings
@@ -36,6 +36,14 @@
 	let showPasswordModal = $state(false);
 	let selectedUserId = $state('');
 	let selectedUserPassword = $state('');
+	let createdTempPassword = $state('');
+	let resetTempPassword = $state('');
+
+	// Edit User State
+	let showEditModal = $state(false);
+	let editUserTarget = $state<Staff | null>(null);
+	let editFullName = $state('');
+	let editRole = $state<'health_staff' | 'admin'>('health_staff');
 
 	// Beds State
 	let showBedModal = $state(false);
@@ -112,6 +120,7 @@
 		userPassword = '';
 		userRole = 'health_staff';
 		formError = null;
+		createdTempPassword = '';
 		showUserModal = true;
 	}
 
@@ -120,13 +129,13 @@
 		formLoading = true;
 		formError = null;
 		try {
-			await createUser({
+			const res = await createUser({
 				full_name: userFullName,
 				username: userUsername,
 				password: userPassword,
 				role: userRole
 			});
-			showUserModal = false;
+			createdTempPassword = res.temporary_password;
 			users = await listUsers();
 		} catch (err: any) {
 			formError = err.message || 'Error al crear usuario';
@@ -150,6 +159,7 @@
 	function openPasswordModal(id: string) {
 		selectedUserId = id;
 		selectedUserPassword = '';
+		resetTempPassword = '';
 		showPasswordModal = true;
 	}
 
@@ -157,11 +167,47 @@
 		e.preventDefault();
 		formLoading = true;
 		try {
-			await changePassword(selectedUserId, selectedUserPassword);
-			showPasswordModal = false;
-			alert('Contraseña actualizada correctamente');
+			const res = await resetPassword(selectedUserId);
+			resetTempPassword = res.temporary_password;
 		} catch (err: any) {
 			alert('Error: ' + err.message);
+		} finally {
+			formLoading = false;
+		}
+	}
+
+	// --- EDIT USER ACTIONS ---
+	function openEditModal(user: Staff) {
+		editUserTarget = user;
+		editFullName = user.full_name;
+		editRole = user.role;
+		formError = null;
+		showEditModal = true;
+	}
+
+	function closeEditModal() {
+		showEditModal = false;
+		editUserTarget = null;
+		editFullName = '';
+		editRole = 'health_staff';
+		formError = null;
+	}
+
+	async function handleEditSubmit(e: Event) {
+		e.preventDefault();
+		if (!editUserTarget) return;
+		formLoading = true;
+		formError = null;
+		try {
+			await updateStaff(editUserTarget.id, {
+				full_name: editFullName,
+				role: editRole
+			});
+			showEditModal = false;
+			editUserTarget = null;
+			users = await listUsers();
+		} catch (err: any) {
+			formError = err.message || 'Error al actualizar usuario';
 		} finally {
 			formLoading = false;
 		}
@@ -391,6 +437,9 @@
 										</span>
 									</td>
 									<td class="actions">
+										<button class="btn btn-sm btn-info" onclick={() => openEditModal(user)}>
+											✏️ Editar
+										</button>
 										<button class="btn btn-sm btn-secondary" onclick={() => openPasswordModal(user.id)}>
 											🔑 Clave
 										</button>
@@ -613,39 +662,58 @@
 {#if showUserModal}
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="modal-backdrop" onclick={() => (showUserModal = false)}></div>
+	<div class="modal-backdrop" onclick={() => { showUserModal = false; createdTempPassword = ''; }}></div>
 	<dialog open class="modal">
-		<h3>Crear Nuevo Usuario</h3>
-		{#if formError}
-			<div class="error-alert">{formError}</div>
-		{/if}
-		<form onsubmit={handleUserSubmit}>
-			<label>
-				Nombre Completo:
-				<input type="text" bind:value={userFullName} required placeholder="Ej: Dr. Juan Pérez" />
-			</label>
-			<label>
-				Nombre de Usuario:
-				<input type="text" bind:value={userUsername} required placeholder="Ej: jperez" />
-			</label>
-			<label>
-				Contraseña Inicial:
-				<input type="password" bind:value={userPassword} required />
-			</label>
-			<label>
-				Rol:
-				<select bind:value={userRole}>
-					<option value="health_staff">Personal Médico (Enfermera, Médico, etc)</option>
-					<option value="admin">Administrador del Sistema</option>
-				</select>
-			</label>
+		{#if createdTempPassword}
+			<h3>✅ Usuario Creado</h3>
+			<div class="temp-password-box">
+				<p>Contraseña temporal generada:</p>
+				<div class="temp-password-display">
+					<code>{createdTempPassword}</code>
+					<button type="button" class="btn btn-sm btn-secondary" onclick={() => navigator.clipboard.writeText(createdTempPassword)}>
+						📋 Copiar
+					</button>
+				</div>
+			</div>
+			<p class="temp-password-warning">⚠️ Esta contraseña se muestra una sola vez. Asegúrate de copiarla.</p>
 			<div class="modal-actions">
-				<button type="button" class="btn btn-text" onclick={() => (showUserModal = false)}>Cancelar</button>
-				<button type="submit" class="btn btn-primary" disabled={formLoading}>
-					{formLoading ? 'Creando...' : 'Crear Usuario'}
+				<button type="button" class="btn btn-primary" onclick={() => { showUserModal = false; createdTempPassword = ''; }}>
+					Listo
 				</button>
 			</div>
-		</form>
+		{:else}
+			<h3>Crear Nuevo Usuario</h3>
+			{#if formError}
+				<div class="error-alert">{formError}</div>
+			{/if}
+			<form onsubmit={handleUserSubmit}>
+				<label>
+					Nombre Completo:
+					<input type="text" bind:value={userFullName} required placeholder="Ej: Dr. Juan Pérez" />
+				</label>
+				<label>
+					Nombre de Usuario:
+					<input type="text" bind:value={userUsername} required placeholder="Ej: jperez" />
+				</label>
+				<label>
+					Contraseña Inicial:
+					<input type="password" bind:value={userPassword} required />
+				</label>
+				<label>
+					Rol:
+					<select bind:value={userRole}>
+						<option value="health_staff">Personal Médico (Enfermera, Médico, etc)</option>
+						<option value="admin">Administrador del Sistema</option>
+					</select>
+				</label>
+				<div class="modal-actions">
+					<button type="button" class="btn btn-text" onclick={() => { showUserModal = false; createdTempPassword = ''; }}>Cancelar</button>
+					<button type="submit" class="btn btn-primary" disabled={formLoading}>
+						{formLoading ? 'Creando...' : 'Crear Usuario'}
+					</button>
+				</div>
+			</form>
+		{/if}
 	</dialog>
 {/if}
 
@@ -653,18 +721,66 @@
 {#if showPasswordModal}
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="modal-backdrop" onclick={() => (showPasswordModal = false)}></div>
+	<div class="modal-backdrop" onclick={() => { showPasswordModal = false; resetTempPassword = ''; }}></div>
 	<dialog open class="modal">
-		<h3>Cambiar Contraseña</h3>
-		<form onsubmit={handleChangePassword}>
+		{#if resetTempPassword}
+			<h3>✅ Contraseña Restablecida</h3>
+			<div class="temp-password-box">
+				<p>Nueva contraseña temporal:</p>
+				<div class="temp-password-display">
+					<code>{resetTempPassword}</code>
+					<button type="button" class="btn btn-sm btn-secondary" onclick={() => navigator.clipboard.writeText(resetTempPassword)}>
+						📋 Copiar
+					</button>
+				</div>
+			</div>
+			<p class="temp-password-warning">⚠️ Esta contraseña se muestra una sola vez. Asegúrate de copiarla.</p>
+			<div class="modal-actions">
+				<button type="button" class="btn btn-primary" onclick={() => { showPasswordModal = false; resetTempPassword = ''; }}>
+					Listo
+				</button>
+			</div>
+		{:else}
+			<h3>Restablecer Contraseña</h3>
+			<p class="temp-password-warning">Se generará una nueva contraseña temporal para este usuario.</p>
+			<form onsubmit={handleChangePassword}>
+				<div class="modal-actions">
+					<button type="button" class="btn btn-text" onclick={() => { showPasswordModal = false; resetTempPassword = ''; }}>Cancelar</button>
+					<button type="submit" class="btn btn-primary" disabled={formLoading}>
+						{formLoading ? 'Generando...' : 'Generar Nueva Clave'}
+					</button>
+				</div>
+			</form>
+		{/if}
+	</dialog>
+{/if}
+
+<!-- Edit User Modal -->
+{#if showEditModal}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="modal-backdrop" onclick={closeEditModal}></div>
+	<dialog open class="modal">
+		<h3>Editar Usuario: {editUserTarget?.full_name}</h3>
+		{#if formError}
+			<div class="error-alert">{formError}</div>
+		{/if}
+		<form onsubmit={handleEditSubmit}>
 			<label>
-				Nueva Contraseña:
-				<input type="password" bind:value={selectedUserPassword} required minlength="6" />
+				Nombre Completo:
+				<input type="text" bind:value={editFullName} required />
+			</label>
+			<label>
+				Rol:
+				<select bind:value={editRole}>
+					<option value="health_staff">Personal Médico</option>
+					<option value="admin">Administrador</option>
+				</select>
 			</label>
 			<div class="modal-actions">
-				<button type="button" class="btn btn-text" onclick={() => (showPasswordModal = false)}>Cancelar</button>
+				<button type="button" class="btn btn-text" onclick={closeEditModal}>Cancelar</button>
 				<button type="submit" class="btn btn-primary" disabled={formLoading}>
-					{formLoading ? 'Guardando...' : 'Guardar'}
+					{formLoading ? 'Guardando...' : 'Guardar Cambios'}
 				</button>
 			</div>
 		</form>
@@ -1082,6 +1198,41 @@
 		justify-content: flex-end;
 		gap: 0.75rem;
 		margin-top: 0.75rem;
+	}
+
+	/* Temp Password Display */
+	.temp-password-box {
+		background: var(--info-bg);
+		border: 1px solid rgba(59, 130, 246, 0.2);
+		border-radius: var(--border-radius-md);
+		padding: 1rem;
+		margin: 1rem 0;
+	}
+
+	.temp-password-display {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin: 0.5rem 0;
+	}
+
+	.temp-password-display code {
+		background: var(--surface);
+		padding: 0.5rem 0.75rem;
+		border-radius: var(--border-radius-sm);
+		font-family: monospace;
+		font-size: 1.1rem;
+		font-weight: 700;
+		letter-spacing: 0.05em;
+		flex: 1;
+		text-align: center;
+	}
+
+	.temp-password-warning {
+		color: var(--warning, #d97706);
+		font-size: 0.85rem;
+		font-weight: 500;
+		margin: 0.5rem 0;
 	}
 
 	.error-alert {

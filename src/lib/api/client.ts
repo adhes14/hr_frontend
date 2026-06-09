@@ -6,6 +6,7 @@ export interface Staff {
 	role: 'health_staff' | 'admin';
 	username: string;
 	is_active: boolean;
+	must_change_password: boolean;
 }
 
 export interface BedType {
@@ -382,8 +383,32 @@ export async function createUser(data: {
 	full_name: string;
 	role: 'health_staff' | 'admin';
 	password?: string;
-}): Promise<void> {
-	await fetchJSON('/users', {
+}): Promise<{ status: string; temporary_password: string }> {
+	return fetchJSON<{ status: string; temporary_password: string }>('/users', {
+		method: 'POST',
+		body: JSON.stringify(data)
+	});
+}
+
+export async function updateStaff(id: string, data: { full_name: string; role: string }): Promise<Staff> {
+	return fetchJSON<Staff>(`/users/${id}`, {
+		method: 'PATCH',
+		body: JSON.stringify(data)
+	});
+}
+
+export async function resetPassword(id: string): Promise<{ temporary_password: string }> {
+	return fetchJSON<{ temporary_password: string }>(`/users/${id}/reset-password`, {
+		method: 'POST'
+	});
+}
+
+export async function changeMyPassword(data: {
+	current_password?: string;
+	new_password: string;
+	confirm_password: string;
+}): Promise<{ token: string; user: Staff }> {
+	return fetchJSON<{ token: string; user: Staff }>('/auth/change-password', {
 		method: 'POST',
 		body: JSON.stringify(data)
 	});

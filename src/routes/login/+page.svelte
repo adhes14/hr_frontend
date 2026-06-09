@@ -16,7 +16,11 @@
 		try {
 			const res = await login(username, password);
 			saveSession(res.token, res.user);
-			goto('/');
+			if (res.user.must_change_password) {
+				goto('/change-password');
+			} else {
+				goto('/');
+			}
 		} catch (e: any) {
 			errorMsg = e.message || 'Error de inicio de sesión';
 		} finally {

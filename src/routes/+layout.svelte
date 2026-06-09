@@ -53,6 +53,12 @@
 		}
 	});
 
+	$effect(() => {
+		if (authChecked && $token && $currentUser?.must_change_password && pathname !== '/change-password') {
+			goto('/change-password');
+		}
+	});
+
 	function handleLogout() {
 		clearSession();
 		menuOpen = false;
@@ -102,10 +108,11 @@
 					{/if}
 				</nav>
 
-				<div class="desktop-user">
-					<span class="username">{$currentUser?.full_name}</span>
-					<button class="logout-btn" onclick={handleLogout}>Salir</button>
-				</div>
+			<div class="desktop-user">
+				<span class="username">{$currentUser?.full_name}</span>
+				<a href="/settings/password" class="change-password-link">🔑 Cambiar contraseña</a>
+				<button class="logout-btn" onclick={handleLogout}>Salir</button>
+			</div>
 			</div>
 		</header>
 
@@ -125,10 +132,11 @@
 					<a href="/admin" class:active={pathname.startsWith('/admin')} onclick={closeMenu}>⚙️ Panel Admin</a>
 				{/if}
 			</nav>
-			<div class="mobile-user-section">
-				<span class="mobile-username">Usuario: {$currentUser?.full_name}</span>
-				<button class="mobile-logout-btn" onclick={handleLogout}>Cerrar Sesión</button>
-			</div>
+		<div class="mobile-user-section">
+			<span class="mobile-username">Usuario: {$currentUser?.full_name}</span>
+			<a href="/settings/password" class="mobile-change-password-link">🔑 Cambiar contraseña</a>
+			<button class="mobile-logout-btn" onclick={handleLogout}>Cerrar Sesión</button>
+		</div>
 		</div>
 		{#if menuOpen}
 			<!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -288,6 +296,36 @@
 	.mobile-logout-btn:active, .logout-btn:hover {
 		background: var(--danger);
 		color: white;
+	}
+
+	.change-password-link {
+		color: var(--primary);
+		font-weight: 500;
+		padding: 0.5rem 0.75rem;
+		border-radius: var(--border-radius-md);
+		text-decoration: none;
+		transition: all 0.2s;
+		white-space: nowrap;
+	}
+
+	.change-password-link:hover {
+		background: var(--info-bg);
+		color: var(--primary);
+	}
+
+	.mobile-change-password-link {
+		color: var(--primary);
+		font-weight: 600;
+		padding: 0.75rem 1rem;
+		border-radius: var(--border-radius-md);
+		text-decoration: none;
+		transition: all 0.2s;
+		border: 1px solid var(--border-color);
+		text-align: center;
+	}
+
+	.mobile-change-password-link:active {
+		background: var(--info-bg);
 	}
 
 	.overlay {
