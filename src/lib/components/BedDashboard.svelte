@@ -41,12 +41,14 @@
 <div class="dashboard">
 	<div class="header">
 		<h2>Mapa de Camas</h2>
-		<button class="refresh-btn" onclick={loadBeds} disabled={loading}>
-			{loading ? 'Cargando...' : '🔄 Actualizar'}
-		</button>
-		<a href="/beds/history" class="btn btn-secondary" data-sveltekit-preload-data="hover">
-			📋 Historial de Camas
-		</a>
+		<div class="header-actions">
+			<button class="refresh-btn" onclick={loadBeds} disabled={loading}>
+				{loading ? 'Cargando...' : '🔄 Actualizar'}
+			</button>
+			<a href="/beds/history" class="btn btn-secondary" data-sveltekit-preload-data="hover">
+				📋 Historial de Camas
+			</a>
+		</div>
 	</div>
 
 	{#if error}
@@ -88,18 +90,35 @@
 		font-size: 1.25rem; /* Reduced for mobile */
 	}
 
+	.header-actions {
+		display: flex;
+		gap: 0.5rem;
+		width: 100%;
+		align-items: center;
+	}
+
+	.header-actions .refresh-btn,
+	.header-actions .btn-secondary {
+		flex: 1;
+		margin: 0;
+		padding: 0.625rem 0.5rem;
+		text-align: center;
+		font-size: 0.8125rem;
+		font-weight: 600;
+		border-radius: var(--border-radius-md);
+		cursor: pointer;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		white-space: nowrap;
+		transition: all 0.2s ease;
+		box-shadow: var(--shadow-sm);
+	}
+
 	.refresh-btn {
 		background: var(--primary);
 		color: white;
 		border: none;
-		padding: 0.5rem 1rem; /* Reduced padding */
-		border-radius: var(--border-radius-md);
-		cursor: pointer;
-		font-size: 0.8125rem; /* Reduced font size */
-		font-weight: 600;
-		transition: all 0.2s ease;
-		box-shadow: var(--shadow-sm);
-		align-self: flex-start;
 	}
 
 	.refresh-btn:hover:not(:disabled) {
@@ -117,16 +136,7 @@
 		background: var(--surface);
 		color: var(--secondary);
 		border: 1px solid var(--border-color);
-		padding: 0.75rem 1.25rem;
-		border-radius: var(--border-radius-md);
-		cursor: pointer;
-		font-size: 0.875rem;
-		font-weight: 600;
 		text-decoration: none;
-		text-align: center;
-		transition: all 0.2s ease;
-		display: inline-block;
-		align-self: flex-start;
 	}
 
 	.btn-secondary:hover {
@@ -185,13 +195,18 @@
 			align-items: center;
 			margin-bottom: 2rem;
 		}
-		h2 {
-			font-size: 1.5rem;
+		.header-actions {
+			width: auto;
+			gap: 0.75rem;
 		}
-		.refresh-btn {
-			align-self: auto;
+		.header-actions .refresh-btn,
+		.header-actions .btn-secondary {
+			flex: none;
 			padding: 0.75rem 1.25rem;
 			font-size: 0.875rem;
+		}
+		h2 {
+			font-size: 1.5rem;
 		}
 		.beds-grid {
 			grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Desktop size */

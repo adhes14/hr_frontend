@@ -1,24 +1,30 @@
 <script lang="ts">
-	import type { Patient, Bed } from '$lib/api/client';
-	import { getBeds, searchPatients, createAdmission, getPatient } from '$lib/api/client';
-	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
+	import type { Patient, Bed } from "$lib/api/client";
+	import {
+		getBeds,
+		searchPatients,
+		createAdmission,
+		getPatient,
+	} from "$lib/api/client";
+	import { goto } from "$app/navigation";
+	import { page } from "$app/stores";
 
 	let beds = $state<Bed[]>([]);
 	let patients = $state<Patient[]>([]);
 	let selectedBedId = $state<number | null>(null);
 	let selectedPatientId = $state<string | null>(null);
 	let selectedPatient = $state<Patient | null>(null);
-	let searchQuery = $state('');
+	let searchQuery = $state("");
 	let loading = $state(false);
 	let loadingBeds = $state(true);
 	let error = $state<string | null>(null);
-	let admissionDiagnosis = $state('');
+	let admissionDiagnosis = $state("");
+	let treatment = $state("");
 
 	// Get pre-selected values from URL params
 	$effect(() => {
-		const bedParam = $page.url.searchParams.get('bed_id');
-		const patientParam = $page.url.searchParams.get('patient_id');
+		const bedParam = $page.url.searchParams.get("bed_id");
+		const patientParam = $page.url.searchParams.get("patient_id");
 		if (bedParam) selectedBedId = parseInt(bedParam);
 		if (patientParam) selectedPatientId = patientParam;
 	});
@@ -28,16 +34,16 @@
 		if (selectedPatientId) {
 			if (selectedPatient?.id === selectedPatientId) return;
 
-			const found = patients.find(p => p.id === selectedPatientId);
+			const found = patients.find((p) => p.id === selectedPatientId);
 			if (found) {
 				selectedPatient = found;
 			} else {
 				getPatient(selectedPatientId)
-					.then(p => {
+					.then((p) => {
 						selectedPatient = p;
 					})
-					.catch(e => {
-						console.error('Error fetching patient:', e);
+					.catch((e) => {
+						console.error("Error fetching patient:", e);
 						selectedPatient = null;
 					});
 			}
@@ -54,9 +60,11 @@
 	async function loadBeds() {
 		try {
 			const allBeds = await getBeds();
-			beds = allBeds.filter(b => b.current_admission_id === null && b.is_active);
+			beds = allBeds.filter(
+				(b) => b.current_admission_id === null && b.is_active,
+			);
 		} catch (e) {
-			console.error('Error loading beds:', e);
+			console.error("Error loading beds:", e);
 		} finally {
 			loadingBeds = false;
 		}
@@ -67,18 +75,18 @@
 		try {
 			patients = await searchPatients(searchQuery.trim());
 		} catch (e) {
-			console.error('Search error:', e);
+			console.error("Search error:", e);
 			patients = [];
 		}
 	}
 
 	async function handleSubmit() {
 		if (!selectedBedId || !selectedPatientId) {
-			error = 'Selecciona una cama y un paciente';
+			error = "Selecciona una cama y un paciente";
 			return;
 		}
 		if (!admissionDiagnosis.trim()) {
-			error = 'El diagnóstico de ingreso es obligatorio';
+			error = "El diagnóstico de ingreso es obligatorio";
 			return;
 		}
 
@@ -89,12 +97,14 @@
 			await createAdmission({
 				patient_id: selectedPatientId,
 				bed_id: selectedBedId,
-				admission_diagnosis: admissionDiagnosis.trim()
+				admission_diagnosis: admissionDiagnosis.trim(),
+				treatment: treatment.trim(),
 			});
 
-			goto('/');
+			goto("/");
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Error al crear internación';
+			error =
+				e instanceof Error ? e.message : "Error al crear internación";
 		} finally {
 			loading = false;
 		}
@@ -112,7 +122,12 @@
 		<div class="error">{error}</div>
 	{/if}
 
-	<form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+	<form
+		onsubmit={(e) => {
+			e.preventDefault();
+			handleSubmit();
+		}}
+	>
 		<!-- Bed Selection -->
 		<div class="field">
 			<label for="bed-select">Cama</label>
@@ -125,7 +140,8 @@
 					<option value={null}>Seleccionar cama...</option>
 					{#each beds as bed (bed.id)}
 						<option value={bed.id}>
-							{bed.bed_type?.prefix}{bed.number} - {bed.bed_type?.name}
+							{bed.bed_type?.prefix}{bed.number} - {bed.bed_type
+								?.name}
 						</option>
 					{/each}
 				</select>
@@ -136,17 +152,31 @@
 		<div class="field">
 			<label for="patient-search">Paciente</label>
 			{#if selectedPatientId}
-				<div class="selected-patient" class:warning-bg={selectedPatient?.is_admitted}>
+				<div
+					class="selected-patient"
+					class:warning-bg={selectedPatient?.is_admitted}
+				>
 					{#if selectedPatient}
 						{#if selectedPatient.is_admitted}
-							<span class="warning-text">El paciente {selectedPatient.full_name} ya está internado.</span>
+							<span class="warning-text"
+								>El paciente {selectedPatient.full_name} ya está
+								internado.</span
+							>
 						{:else}
-							<span>Paciente seleccionado: {selectedPatient.full_name}</span>
+							<span
+								>Paciente seleccionado: {selectedPatient.full_name}</span
+							>
 						{/if}
 					{:else}
 						<span>Cargando datos del paciente...</span>
 					{/if}
-					<button type="button" class="btn-clear" onclick={() => { selectedPatientId = null; }}>
+					<button
+						type="button"
+						class="btn-clear"
+						onclick={() => {
+							selectedPatientId = null;
+						}}
+					>
 						Cambiar
 					</button>
 				</div>
@@ -157,7 +187,9 @@
 						type="text"
 						placeholder="Buscar por DNI o nombre..."
 						bind:value={searchQuery}
-						onkeydown={(e) => e.key === 'Enter' && (e.preventDefault(), handleSearch())}
+						onkeydown={(e) =>
+							e.key === "Enter" &&
+							(e.preventDefault(), handleSearch())}
 					/>
 					<button type="button" onclick={handleSearch}>🔍</button>
 				</div>
@@ -168,15 +200,21 @@
 							<button
 								type="button"
 								class="patient-option"
-								class:selected={selectedPatientId === patient.id}
+								class:selected={selectedPatientId ===
+									patient.id}
 								class:disabled={patient.is_admitted}
 								disabled={patient.is_admitted}
-								onclick={() => { if (!patient.is_admitted) selectedPatientId = patient.id; }}
+								onclick={() => {
+									if (!patient.is_admitted)
+										selectedPatientId = patient.id;
+								}}
 							>
 								<strong>
 									{patient.full_name}
 									{#if patient.is_admitted}
-										<span class="badge-internado">(Ya internado/a)</span>
+										<span class="badge-internado"
+											>(Ya internado/a)</span
+										>
 									{/if}
 								</strong>
 								<span>DNI: {patient.identity_number}</span>
@@ -199,8 +237,27 @@
 			></textarea>
 		</div>
 
-		<button type="submit" class="btn-submit" disabled={loading || !selectedBedId || !selectedPatientId || selectedPatient?.is_admitted || !admissionDiagnosis.trim()}>
-			{loading ? 'Internando...' : 'Internar Paciente'}
+		<!-- Treatment -->
+		<div class="field">
+			<label for="treatment">Tratamiento</label>
+			<textarea
+				id="treatment"
+				placeholder="Ingrese el tratamiento inicial (opcional)..."
+				bind:value={treatment}
+				rows="3"
+			></textarea>
+		</div>
+
+		<button
+			type="submit"
+			class="btn-submit"
+			disabled={loading ||
+				!selectedBedId ||
+				!selectedPatientId ||
+				selectedPatient?.is_admitted ||
+				!admissionDiagnosis.trim()}
+		>
+			{loading ? "Internando..." : "Internar Paciente"}
 		</button>
 	</form>
 </div>
@@ -245,7 +302,9 @@
 		color: #333;
 	}
 
-	select, input, textarea {
+	select,
+	input,
+	textarea {
 		width: 100%;
 		padding: 0.75rem;
 		border: 2px solid #ddd;
@@ -256,7 +315,9 @@
 		resize: vertical;
 	}
 
-	select:focus, input:focus, textarea:focus {
+	select:focus,
+	input:focus,
+	textarea:focus {
 		outline: none;
 		border-color: #1a1a2e;
 	}

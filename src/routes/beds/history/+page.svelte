@@ -468,11 +468,20 @@
 
 	@media (max-width: 640px) {
 		.filters {
-			flex-direction: column;
+			flex-direction: row;
+			gap: 0.5rem;
+		}
+		.filter-group {
+			flex: 1 1 calc(50% - 0.5rem);
+		}
+		.filter-group:first-child {
+			flex: 1 1 100%;
 		}
 		.filter-group select,
 		.filter-group input {
 			width: 100%;
+			font-size: 0.875rem;
+			padding: 0.4rem 0.6rem;
 		}
 	}
 </style>

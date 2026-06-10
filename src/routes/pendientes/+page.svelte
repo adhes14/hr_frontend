@@ -30,7 +30,38 @@
 		}
 	}
 
-	async function handleStatusUpdate(orderId: number, status: 'done' | 'reported') {
+	// Report Modal State
+	let showReportModal = $state(false);
+	let reportOrderId = $state<number | null>(null);
+	let reportResultText = $state('');
+
+	function openReportModal(orderId: number) {
+		reportOrderId = orderId;
+		reportResultText = '';
+		showReportModal = true;
+	}
+
+	function closeReportModal() {
+		showReportModal = false;
+		reportOrderId = null;
+		reportResultText = '';
+	}
+
+	async function submitReportResult() {
+		if (reportOrderId === null) return;
+		try {
+			await updateOrderStatus(reportOrderId, {
+				status: 'reported',
+				result: reportResultText.trim()
+			});
+			closeReportModal();
+			await loadData();
+		} catch (e) {
+			alert(e instanceof Error ? e.message : 'Error al registrar el resultado');
+		}
+	}
+
+	async function handleStatusUpdate(orderId: number, status: 'done') {
 		try {
 			await updateOrderStatus(orderId, { status });
 			await loadData();
@@ -110,6 +141,9 @@
 								<div class="order-info">
 									<div class="order-type">
 										<span class="category badge-{order.category}">{order.category}</span>
+										<span class="status-badge status-{order.status}">
+											{order.status === 'pending' ? 'Pendiente' : 'Realizado'}
+										</span>
 										<span class="time">{new Date(order.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</span>
 									</div>
 									<p class="description">{order.description}</p>
@@ -119,12 +153,15 @@
 								</div>
 								
 								<div class="order-actions">
-									<button class="btn-action done" onclick={() => handleStatusUpdate(order.id, 'done')}>
-										Realizado
-									</button>
-									<button class="btn-action reported" onclick={() => handleStatusUpdate(order.id, 'reported')}>
-										Reportado
-									</button>
+									{#if order.status === 'pending'}
+										<button class="btn-action done" onclick={() => handleStatusUpdate(order.id, 'done')}>
+											Realizado
+										</button>
+									{:else if order.status === 'done'}
+										<button class="btn-action reported" onclick={() => openReportModal(order.id)}>
+											Reportar
+										</button>
+									{/if}
 									{#if $currentUser?.role === 'admin'}
 										<button class="btn-delete" onclick={() => handleDelete(order.id)} title="Eliminar">
 											🗑️
@@ -139,6 +176,30 @@
 		</div>
 	{/if}
 </div>
+
+{#if showReportModal}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="modal-backdrop" onclick={closeReportModal}>
+		<div class="modal-content" onclick={(e) => e.stopPropagation()}>
+			<h3>Registrar Resultado de Orden</h3>
+			<p class="modal-subtitle">Ingrese el resultado en texto libre para la orden auxiliar.</p>
+			
+			<textarea
+				placeholder="Escriba el resultado del estudio/procedimiento..."
+				bind:value={reportResultText}
+				rows="5"
+			></textarea>
+			
+			<div class="modal-actions">
+				<button class="btn-cancel" onclick={closeReportModal}>Cancelar</button>
+				<button class="btn-confirm" onclick={submitReportResult}>
+					Confirmar y Reportar
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
 
 <style>
 	.pendientes-page {
@@ -360,5 +421,107 @@
 
 	.btn-delete:hover {
 		background: var(--danger-bg);
+	}
+
+	.status-badge {
+		font-size: 0.65rem;
+		font-weight: bold;
+		text-transform: uppercase;
+		padding: 0.15rem 0.35rem;
+		border-radius: 4px;
+	}
+
+	.status-pending { background: #fee2e2; color: #991b1b; }
+	.status-done { background: #dcfce7; color: #166534; }
+
+	/* Modal Styles */
+	.modal-backdrop {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100vw;
+		height: 100vh;
+		background: rgba(15, 23, 42, 0.6);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 100;
+		backdrop-filter: blur(4px);
+	}
+
+	.modal-content {
+		background: white;
+		border-radius: 12px;
+		padding: 1.5rem;
+		width: 90%;
+		max-width: 500px;
+		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.modal-content h3 {
+		margin: 0;
+		color: var(--secondary);
+		font-size: 1.25rem;
+	}
+
+	.modal-subtitle {
+		font-size: 0.875rem;
+		color: var(--text-muted);
+		margin: 0;
+	}
+
+	.modal-content textarea {
+		width: 100%;
+		padding: 0.75rem;
+		border: 1px solid var(--border-color);
+		border-radius: 8px;
+		font-size: 0.9375rem;
+		resize: vertical;
+		font-family: inherit;
+	}
+
+	.modal-content textarea:focus {
+		outline: none;
+		border-color: var(--primary);
+	}
+
+	.modal-actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: 0.75rem;
+		margin-top: 0.5rem;
+	}
+
+	.btn-cancel {
+		background: #f1f5f9;
+		color: var(--text-muted);
+		border: none;
+		padding: 0.625rem 1.25rem;
+		border-radius: 8px;
+		font-weight: 600;
+		cursor: pointer;
+		transition: background 0.2s;
+	}
+
+	.btn-cancel:hover {
+		background: #e2e8f0;
+	}
+
+	.btn-confirm {
+		background: var(--primary);
+		color: white;
+		border: none;
+		padding: 0.625rem 1.25rem;
+		border-radius: 8px;
+		font-weight: 600;
+		cursor: pointer;
+		transition: background 0.2s;
+	}
+
+	.btn-confirm:hover {
+		background: var(--primary-hover);
 	}
 </style>

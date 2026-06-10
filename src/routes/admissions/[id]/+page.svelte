@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { getAdmission, getBedPatient, getBed, listClinicalLogs, listOrdersByAdmission, createOrder, updateOrderStatus, deleteOrder, updateAdmissionDiagnosis } from '$lib/api/client';
+	import { getAdmission, getBedPatient, getBed, listClinicalLogs, listOrdersByAdmission, createOrder, updateOrderStatus, deleteOrder, updateAdmissionDiagnosis, updateAdmissionTreatment } from '$lib/api/client';
 	import type { Admission, Patient, Bed, ClinicalLog, AuxiliaryOrder } from '$lib/api/client';
 	import EventTypeSelector from '$lib/components/EventTypeSelector.svelte';
 	import ControlStatusBadge from '$lib/components/ControlStatusBadge.svelte';
@@ -21,6 +21,35 @@
 	let editingDiagnosis = $state(false);
 	let tempCurrentDiagnosis = $state('');
 	let savingDiagnosis = $state(false);
+
+	// Treatment Edit State
+	let editingTreatment = $state(false);
+	let tempTreatment = $state('');
+	let savingTreatment = $state(false);
+
+	function startEditingTreatment() {
+		if (!admission) return;
+		tempTreatment = admission.treatment || '';
+		editingTreatment = true;
+	}
+
+	function cancelEditingTreatment() {
+		editingTreatment = false;
+	}
+
+	async function handleSaveTreatment() {
+		if (!admission) return;
+		savingTreatment = true;
+		try {
+			const updatedAdmission = await updateAdmissionTreatment(admission.id, tempTreatment.trim());
+			admission = updatedAdmission;
+			editingTreatment = false;
+		} catch (e) {
+			alert(e instanceof Error ? e.message : 'Error al guardar el tratamiento');
+		} finally {
+			savingTreatment = false;
+		}
+	}
 
 	function startEditingDiagnosis() {
 		if (!admission) return;
@@ -51,6 +80,37 @@
 	let newOrderCategory = $state<'laboratorio' | 'imagen' | 'procedimiento'>('laboratorio');
 	let newOrderDescription = $state('');
 	let submittingOrder = $state(false);
+
+	// Report Modal State
+	let showReportModal = $state(false);
+	let reportOrderId = $state<number | null>(null);
+	let reportResultText = $state('');
+
+	function openReportModal(orderId: number) {
+		reportOrderId = orderId;
+		reportResultText = '';
+		showReportModal = true;
+	}
+
+	function closeReportModal() {
+		showReportModal = false;
+		reportOrderId = null;
+		reportResultText = '';
+	}
+
+	async function submitReportResult() {
+		if (reportOrderId === null) return;
+		try {
+			await updateOrderStatus(reportOrderId, {
+				status: 'reported',
+				result: reportResultText.trim()
+			});
+			closeReportModal();
+			await loadOrders();
+		} catch (e) {
+			alert(e instanceof Error ? e.message : 'Error al registrar el resultado');
+		}
+	}
 
 	import { currentUser } from '$lib/auth';
 	import { ordersUpdateTrigger } from '$lib/sse';
@@ -265,6 +325,41 @@
 				</div>
 			</section>
 
+			<!-- Treatment Section -->
+			<section class="section diagnosis-section">
+				<h2>Tratamiento</h2>
+				<div class="diagnosis-details">
+					<div class="diagnosis-item">
+						{#if editingTreatment}
+							<div class="edit-diagnosis-form">
+								<textarea
+									bind:value={tempTreatment}
+									placeholder="Ingrese el tratamiento..."
+									rows="3"
+								></textarea>
+								<div class="edit-actions">
+									<button class="btn-save" onclick={handleSaveTreatment} disabled={savingTreatment}>
+										{savingTreatment ? 'Guardando...' : 'Guardar'}
+									</button>
+									<button class="btn-cancel-edit" onclick={cancelEditingTreatment} disabled={savingTreatment}>
+										Cancelar
+									</button>
+								</div>
+							</div>
+						{:else}
+							<div class="view-diagnosis">
+								<p class="diagnosis-text">{admission.treatment || 'No especificado'}</p>
+								{#if admission.status === 'active'}
+									<button type="button" class="btn-edit-diag" onclick={startEditingTreatment}>
+										✏️ Editar
+									</button>
+								{/if}
+							</div>
+						{/if}
+					</div>
+				</div>
+			</section>
+
 		<!-- Event Section - only for beds that require postpartum follow-up -->
 		{#if bed?.bed_type?.requires_postpartum_followup}
 			<section class="section">
@@ -401,6 +496,13 @@
 									</div>
 								</div>
 								
+								{#if order.status === 'reported' && order.result}
+									<div class="order-result">
+										<strong>Resultado:</strong>
+										<p>{order.result}</p>
+									</div>
+								{/if}
+
 								<div class="order-footer">
 									<div class="status-indicator status-{order.status}">
 										{order.status === 'pending' ? 'Pendiente' : order.status === 'done' ? 'Realizado' : 'Reportado'}
@@ -410,11 +512,8 @@
 										{#if order.status === 'pending'}
 											<button class="btn-mini done" onclick={() => handleOrderStatus(order.id, 'done')}>Realizado</button>
 										{/if}
-										{#if order.status === 'pending' || order.status === 'done'}
-											<button class="btn-mini reported" onclick={() => handleOrderStatus(order.id, 'reported')}>Reportado</button>
-										{/if}
-										{#if order.status !== 'pending'}
-											<button class="btn-mini pending" onclick={() => handleOrderStatus(order.id, 'pending')}>Pendiente</button>
+										{#if order.status === 'done'}
+											<button class="btn-mini reported" onclick={() => openReportModal(order.id)}>Reportar</button>
 										{/if}
 										{#if $currentUser?.role === 'admin'}
 											<button class="btn-mini delete" onclick={() => handleDeleteOrder(order.id)}>🗑️</button>
@@ -436,6 +535,30 @@
 		</div>
 	{/if}
 </div>
+
+{#if showReportModal}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="modal-backdrop" onclick={closeReportModal}>
+		<div class="modal-content" onclick={(e) => e.stopPropagation()}>
+			<h3>Registrar Resultado de Orden</h3>
+			<p class="modal-subtitle">Ingrese el resultado en texto libre para la orden auxiliar.</p>
+			
+			<textarea
+				placeholder="Escriba el resultado del estudio/procedimiento..."
+				bind:value={reportResultText}
+				rows="5"
+			></textarea>
+			
+			<div class="modal-actions">
+				<button class="btn-cancel" onclick={closeReportModal}>Cancelar</button>
+				<button class="btn-confirm" onclick={submitReportResult}>
+					Confirmar y Reportar
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
 
 <style>
 	.admission-detail {
@@ -906,6 +1029,117 @@
 	.btn-mini.reported { background: #dbeafe; color: #1e40af; }
 	.btn-mini.pending { background: #f1f5f9; color: #475569; }
 	.btn-mini.delete { background: transparent; border: 1px solid var(--danger); font-size: 1rem; padding: 0.1rem 0.3rem;}
+
+	.order-result {
+		margin-top: 0.5rem;
+		background: #f8fafc;
+		border-left: 3px solid var(--primary);
+		padding: 0.5rem 0.75rem;
+		border-radius: 4px;
+		font-size: 0.875rem;
+	}
+	.order-result strong {
+		display: block;
+		font-size: 0.75rem;
+		color: var(--text-muted);
+		margin-bottom: 0.25rem;
+	}
+	.order-result p {
+		margin: 0;
+		white-space: pre-wrap;
+		color: var(--text-main);
+	}
+
+	/* Modal Styles */
+	.modal-backdrop {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100vw;
+		height: 100vh;
+		background: rgba(15, 23, 42, 0.6);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 100;
+		backdrop-filter: blur(4px);
+	}
+
+	.modal-content {
+		background: white;
+		border-radius: 12px;
+		padding: 1.5rem;
+		width: 90%;
+		max-width: 500px;
+		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.modal-content h3 {
+		margin: 0;
+		color: var(--secondary);
+		font-size: 1.25rem;
+	}
+
+	.modal-subtitle {
+		font-size: 0.875rem;
+		color: var(--text-muted);
+		margin: 0;
+	}
+
+	.modal-content textarea {
+		width: 100%;
+		padding: 0.75rem;
+		border: 1px solid var(--border-color);
+		border-radius: 8px;
+		font-size: 0.9375rem;
+		resize: vertical;
+		font-family: inherit;
+	}
+
+	.modal-content textarea:focus {
+		outline: none;
+		border-color: var(--primary);
+	}
+
+	.modal-actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: 0.75rem;
+		margin-top: 0.5rem;
+	}
+
+	.btn-cancel {
+		background: #f1f5f9;
+		color: var(--text-muted);
+		border: none;
+		padding: 0.625rem 1.25rem;
+		border-radius: 8px;
+		font-weight: 600;
+		cursor: pointer;
+		transition: background 0.2s;
+	}
+
+	.btn-cancel:hover {
+		background: #e2e8f0;
+	}
+
+	.btn-confirm {
+		background: var(--primary);
+		color: white;
+		border: none;
+		padding: 0.625rem 1.25rem;
+		border-radius: 8px;
+		font-weight: 600;
+		cursor: pointer;
+		transition: background 0.2s;
+	}
+
+	.btn-confirm:hover {
+		background: var(--primary-hover);
+	}
 
 	@media (min-width: 640px) {
 		.order-header {

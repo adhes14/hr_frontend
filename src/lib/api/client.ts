@@ -72,6 +72,7 @@ export interface Admission {
 	discharged_at: string | null;
 	admission_diagnosis: string;
 	current_diagnosis: string;
+	treatment: string;
 	current_diagnosis_updated_by?: string | null;
 	current_diagnosis_updated_by_name?: string | null;
 }
@@ -108,6 +109,7 @@ export interface AuxiliaryOrder {
 	category: 'laboratorio' | 'imagen' | 'procedimiento';
 	description: string;
 	status: 'pending' | 'done' | 'reported';
+	result: string;
 	created_by?: string;
 	created_by_name?: string;
 	updated_by?: string;
@@ -126,6 +128,7 @@ export interface CreateOrderInput {
 
 export interface UpdateOrderStatusInput {
 	status: 'pending' | 'done' | 'reported';
+	result?: string;
 }
 
 export interface CreateClinicalLogInput {
@@ -323,10 +326,18 @@ export async function createAdmission(data: {
 	patient_id: string;
 	bed_id: number;
 	admission_diagnosis: string;
+	treatment?: string;
 }): Promise<Admission> {
 	return fetchJSON<Admission>('/admissions', {
 		method: 'POST',
 		body: JSON.stringify(data)
+	});
+}
+
+export async function updateAdmissionTreatment(admissionId: string, treatment: string): Promise<Admission> {
+	return fetchJSON<Admission>(`/admissions/${admissionId}/treatment`, {
+		method: 'PUT',
+		body: JSON.stringify({ treatment })
 	});
 }
 
