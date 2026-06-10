@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { getPatient, getPatientAdmissions, listClinicalLogs, getBeds } from '$lib/api/client';
-	import type { Patient, Admission, ClinicalLog, Bed } from '$lib/api/client';
+	import { getPatient, getPatientAdmissions, listClinicalLogs, getBeds, listOrdersByAdmission } from '$lib/api/client';
+	import type { Patient, Admission, ClinicalLog, Bed, AuxiliaryOrder } from '$lib/api/client';
 
 	const patientId = $derived($page.params.id);
 
@@ -16,6 +16,14 @@
 	// Keys are admission IDs. Values are the logs details.
 	let expandedLogs = $state<Record<string, {
 		logs: ClinicalLog[];
+		loading: boolean;
+		loaded: boolean;
+		error: string | null;
+		expanded: boolean;
+	}>>({});
+
+	let expandedOrders = $state<Record<string, {
+		orders: AuxiliaryOrder[];
 		loading: boolean;
 		loaded: boolean;
 		error: string | null;
@@ -46,8 +54,9 @@
 			}
 			bedsMap = mapping;
 
-			// Initialize expandedLogs state for each admission
+			// Initialize expandedLogs and expandedOrders state for each admission
 			const logsState: typeof expandedLogs = {};
+			const ordersState: typeof expandedOrders = {};
 			for (const adm of admissionsData) {
 				logsState[adm.id] = {
 					logs: [],
@@ -56,8 +65,16 @@
 					error: null,
 					expanded: false
 				};
+				ordersState[adm.id] = {
+					orders: [],
+					loading: false,
+					loaded: false,
+					error: null,
+					expanded: false
+				};
 			}
 			expandedLogs = logsState;
+			expandedOrders = ordersState;
 
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Error al cargar datos del paciente';
@@ -83,6 +100,29 @@
 				state.loaded = true;
 			} catch (e) {
 				state.error = e instanceof Error ? e.message : 'Error al cargar observaciones';
+			} finally {
+				state.loading = false;
+			}
+		}
+	}
+
+	async function toggleOrders(admissionId: string) {
+		const state = expandedOrders[admissionId];
+		if (!state) return;
+
+		// Toggle expanded status
+		state.expanded = !state.expanded;
+
+		// Load orders if expanding and not loaded yet
+		if (state.expanded && !state.loaded && !state.loading) {
+			state.loading = true;
+			state.error = null;
+			try {
+				const orders = await listOrdersByAdmission(admissionId);
+				state.orders = orders;
+				state.loaded = true;
+			} catch (e) {
+				state.error = e instanceof Error ? e.message : 'Error al cargar órdenes';
 			} finally {
 				state.loading = false;
 			}
@@ -306,13 +346,23 @@
 											</a>
 										{/if}
 										
-										<button 
-											type="button" 
-											class="expand-logs-btn {state?.expanded ? 'active-expanded' : ''}" 
-											onclick={() => toggleLogs(adm.id)}
-										>
-											{state?.expanded ? '📖 Ocultar controles clínicos' : '📘 Ver controles clínicos'}
-										</button>
+										<div class="action-buttons-group">
+											<button 
+												type="button" 
+												class="expand-logs-btn {state?.expanded ? 'active-expanded' : ''}" 
+												onclick={() => toggleLogs(adm.id)}
+											>
+												{state?.expanded ? '📖 Ocultar controles clínicos' : '📘 Ver controles clínicos'}
+											</button>
+
+											<button 
+												type="button" 
+												class="expand-logs-btn {expandedOrders[adm.id]?.expanded ? 'active-expanded' : ''}" 
+												onclick={() => toggleOrders(adm.id)}
+											>
+												{expandedOrders[adm.id]?.expanded ? '📋 Ocultar órdenes auxiliares' : '📋 Ver órdenes auxiliares'}
+											</button>
+										</div>
 									</div>
 
 									<!-- Expandable clinical logs section -->
@@ -376,6 +426,58 @@
 																	</td>
 																	<td class="notes-cell" title={log.notes}>{log.notes || '-'}</td>
 																	<td class="author-col">{log.created_by_name || '-'}</td>
+																</tr>
+															{/each}
+														</tbody>
+													</table>
+												</div>
+											{/if}
+										</div>
+									{/if}
+
+									<!-- Expandable auxiliary orders section -->
+									{#if expandedOrders[adm.id]?.expanded}
+										{@const oState = expandedOrders[adm.id]}
+										<div class="expanded-clinical-logs">
+											{#if oState.loading}
+												<div class="small-loading">
+													<div class="spinner-small"></div>
+													<span>Cargando órdenes auxiliares...</span>
+												</div>
+											{:else if oState.error}
+												<div class="small-error">
+													⚠️ {oState.error}
+												</div>
+											{:else if oState.orders.length === 0}
+												<div class="no-logs-fallback">
+													No se registraron órdenes auxiliares durante esta internación.
+												</div>
+											{:else}
+												<div class="logs-table-wrapper">
+													<table class="clinical-logs-table">
+														<thead>
+															<tr>
+																<th>Fecha / Hora</th>
+																<th>Categoría</th>
+																<th>Descripción</th>
+																<th>Estado</th>
+																<th>Resultado</th>
+																<th>Solicitó</th>
+															</tr>
+														</thead>
+														<tbody>
+															{#each oState.orders as order (order.id)}
+																<tr>
+																	<td class="time-col">{formatDateTime(order.created_at)}</td>
+																	<td><span class="badge badge-{order.category}">{order.category}</span></td>
+																	<td>{order.description}</td>
+																	<td>
+																		<span class="status-indicator status-{order.status}">
+																			{order.status === 'pending' ? 'Pendiente' : order.status === 'done' ? 'Realizado' : 'Reportado'}
+																		</span>
+																	</td>
+																	<td class="notes-cell" title={order.result}>{order.result || '-'}</td>
+																	<td class="author-col">{order.created_by_name || '-'}</td>
 																</tr>
 															{/each}
 														</tbody>
@@ -1014,10 +1116,33 @@
 		text-align: center;
 	}
 
-	.empty-icon {
-		width: 48px;
-		height: 48px;
-		color: #94a3b8;
-		margin-bottom: 1rem;
+	.action-buttons-group {
+		display: flex;
+		gap: 0.5rem;
+		margin-left: auto;
+		flex-wrap: wrap;
 	}
+
+	.badge {
+		font-size: 0.75rem;
+		font-weight: 600;
+		padding: 0.2rem 0.5rem;
+		border-radius: 4px;
+	}
+
+	.badge-laboratorio { background: #e0f2fe; color: #0284c7; }
+	.badge-imagen { background: #fef08a; color: #a16207; }
+	.badge-procedimiento { background: #fce7f3; color: #be185d; }
+
+	.status-indicator {
+		font-size: 0.75rem;
+		font-weight: bold;
+		text-transform: uppercase;
+		padding: 0.25rem 0.5rem;
+		border-radius: 4px;
+	}
+
+	.status-indicator.status-pending { background: #fee2e2; color: #991b1b; }
+	.status-indicator.status-done { background: #dcfce7; color: #166534; }
+	.status-indicator.status-reported { background: #dbeafe; color: #1e40af; }
 </style>

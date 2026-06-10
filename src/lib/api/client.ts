@@ -16,6 +16,13 @@ export interface BedType {
 	requires_postpartum_followup: boolean;
 }
 
+export interface Ward {
+	id: number;
+	name: string;
+	description: string;
+	bed_count?: number;
+}
+
 export interface Bed {
 	id: number;
 	bed_type: BedType;
@@ -27,6 +34,8 @@ export interface Bed {
 	estimated_discharge_at?: string | null;
 	event_type?: 'parto' | 'cesarea' | 'ninguno' | null;
 	control_count?: number;
+	ward_id: number;
+	ward?: Ward;
 }
 
 export interface Patient {
@@ -225,6 +234,41 @@ export async function deleteBedType(id: number): Promise<void> {
 	});
 }
 
+// Wards
+export async function getWards(): Promise<Ward[]> {
+	return fetchJSON<Ward[]>('/wards');
+}
+
+export async function getWard(id: number): Promise<Ward> {
+	return fetchJSON<Ward>(`/wards/${id}`);
+}
+
+export async function createWard(data: {
+	name: string;
+	description: string;
+}): Promise<Ward> {
+	return fetchJSON<Ward>('/wards', {
+		method: 'POST',
+		body: JSON.stringify(data)
+	});
+}
+
+export async function updateWard(id: number, data: {
+	name?: string;
+	description?: string;
+}): Promise<Ward> {
+	return fetchJSON<Ward>(`/wards/${id}`, {
+		method: 'PUT',
+		body: JSON.stringify(data)
+	});
+}
+
+export async function deleteWard(id: number): Promise<void> {
+	await fetchJSON(`/wards/${id}`, {
+		method: 'DELETE'
+	});
+}
+
 // Beds
 export async function getBeds(): Promise<Bed[]> {
 	return fetchJSON<Bed[]>('/beds');
@@ -237,6 +281,7 @@ export async function getBed(id: number): Promise<Bed> {
 export async function createBed(data: {
 	number: number;
 	bed_type_id: number;
+	ward_id: number;
 	is_active?: boolean;
 }): Promise<Bed> {
 	return fetchJSON<Bed>('/beds', {
@@ -248,6 +293,7 @@ export async function createBed(data: {
 export async function updateBed(id: number, data: {
 	number?: number;
 	bed_type_id?: number;
+	ward_id?: number;
 }): Promise<Bed> {
 	return fetchJSON<Bed>(`/beds/${id}`, {
 		method: 'PUT',

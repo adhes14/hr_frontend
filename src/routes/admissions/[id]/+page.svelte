@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { getAdmission, getBedPatient, getBed, listClinicalLogs, listOrdersByAdmission, createOrder, updateOrderStatus, deleteOrder, updateAdmissionDiagnosis, updateAdmissionTreatment } from '$lib/api/client';
+	import { getAdmission, getBedPatient, getBed, getPatient, listClinicalLogs, listOrdersByAdmission, createOrder, updateOrderStatus, deleteOrder, updateAdmissionDiagnosis, updateAdmissionTreatment } from '$lib/api/client';
 	import type { Admission, Patient, Bed, ClinicalLog, AuxiliaryOrder } from '$lib/api/client';
 	import EventTypeSelector from '$lib/components/EventTypeSelector.svelte';
 	import ControlStatusBadge from '$lib/components/ControlStatusBadge.svelte';
@@ -142,17 +142,28 @@
 			clinicalLogs = logsData;
 			orders = ordersData;
 
+			const promises: Promise<void>[] = [];
+			if (admission?.patient_id) {
+				promises.push(
+					getPatient(admission.patient_id)
+						.then((data) => {
+							patient = data;
+						})
+						.catch((e) => console.error('Error loading patient:', e))
+				);
+			}
 			if (admission?.bed_id) {
-				try {
-					const [patientData, bedData] = await Promise.all([
-						getBedPatient(admission.bed_id),
-						getBed(admission.bed_id)
-					]);
-					patient = patientData;
-					bed = bedData;
-				} catch (e) {
-					console.error('Error loading patient/bed:', e);
-				}
+				promises.push(
+					getBed(admission.bed_id)
+						.then((data) => {
+							bed = data;
+						})
+						.catch((e) => console.error('Error loading bed:', e))
+				);
+			}
+
+			if (promises.length > 0) {
+				await Promise.all(promises);
 			}
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Error al cargar datos';
@@ -248,7 +259,7 @@
 			← Dashboard
 		</button>
 		{#if patient}
-			<h1>Cama {patient ? ` - ${patient.full_name}` : ''}</h1>
+			<h1>{bed ? `Cama ${bed.bed_type?.prefix ?? ''}${bed.number} - ` : ''}{patient.full_name}</h1>
 		{:else}
 			<h1>Admisión</h1>
 		{/if}
@@ -393,7 +404,7 @@
 		{/if}
 
 			<!-- Clinical Logs History -->
-			{#if bed?.bed_type?.requires_postpartum_followup}
+			{#if bed?.bed_type?.requires_postpartum_followup || clinicalLogs.length > 0}
 				<section class="section">
 					<h2>Historial de Controles</h2>
 					{#if clinicalLogs.length === 0}
@@ -509,14 +520,16 @@
 									</div>
 									
 									<div class="order-actions">
-										{#if order.status === 'pending'}
-											<button class="btn-mini done" onclick={() => handleOrderStatus(order.id, 'done')}>Realizado</button>
-										{/if}
-										{#if order.status === 'done'}
-											<button class="btn-mini reported" onclick={() => openReportModal(order.id)}>Reportar</button>
-										{/if}
-										{#if $currentUser?.role === 'admin'}
-											<button class="btn-mini delete" onclick={() => handleDeleteOrder(order.id)}>🗑️</button>
+										{#if admission.status === 'active'}
+											{#if order.status === 'pending'}
+												<button class="btn-mini done" onclick={() => handleOrderStatus(order.id, 'done')}>Realizado</button>
+											{/if}
+											{#if order.status === 'done'}
+												<button class="btn-mini reported" onclick={() => openReportModal(order.id)}>Reportar</button>
+											{/if}
+											{#if $currentUser?.role === 'admin'}
+												<button class="btn-mini delete" onclick={() => handleDeleteOrder(order.id)}>🗑️</button>
+											{/if}
 										{/if}
 									</div>
 								</div>

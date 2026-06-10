@@ -1,25 +1,51 @@
 <script lang="ts">
-	import type { Bed } from '$lib/api/client';
-	import { getBeds } from '$lib/api/client';
+	import type { Bed, Ward } from '$lib/api/client';
+	import { getBeds, getWards } from '$lib/api/client';
 	import BedCard from './BedCard.svelte';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { bedUpdateTrigger } from '$lib/sse';
 
 	let beds = $state<Bed[]>([]);
+	let wards = $state<Ward[]>([]);
+	let selectedWardId = $state<number | null>(null);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 
-	async function loadBeds() {
+	const filteredBeds = $derived(
+		beds.filter(bed => bed.ward_id === selectedWardId)
+	);
+
+	async function loadData() {
 		loading = true;
 		error = null;
 		try {
-			beds = await getBeds();
+			const [bedsData, wardsData] = await Promise.all([
+				getBeds(),
+				getWards()
+			]);
+			beds = bedsData;
+			wards = wardsData;
+
+			if (wards.length > 0) {
+				const savedId = localStorage.getItem('selected_ward_id');
+				const parsedId = savedId ? parseInt(savedId, 10) : null;
+				if (parsedId !== null && wards.some(w => w.id === parsedId)) {
+					selectedWardId = parsedId;
+				} else {
+					selectedWardId = wards[0].id;
+				}
+			}
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Error al cargar camas';
+			error = e instanceof Error ? e.message : 'Error al cargar datos';
 		} finally {
 			loading = false;
 		}
+	}
+
+	function selectWard(id: number) {
+		selectedWardId = id;
+		localStorage.setItem('selected_ward_id', String(id));
 	}
 
 	function handleBedClick(bed: Bed) {
@@ -27,13 +53,13 @@
 	}
 
 	onMount(() => {
-		loadBeds();
+		loadData();
 	});
 
 	$effect(() => {
 		const trigger = $bedUpdateTrigger;
 		if (trigger > 0) {
-			loadBeds();
+			loadData();
 		}
 	});
 </script>
@@ -42,7 +68,7 @@
 	<div class="header">
 		<h2>Mapa de Camas</h2>
 		<div class="header-actions">
-			<button class="refresh-btn" onclick={loadBeds} disabled={loading}>
+			<button class="refresh-btn" onclick={loadData} disabled={loading}>
 				{loading ? 'Cargando...' : '🔄 Actualizar'}
 			</button>
 			<a href="/beds/history" class="btn btn-secondary" data-sveltekit-preload-data="hover">
@@ -54,40 +80,68 @@
 	{#if error}
 		<div class="error">
 			<p>{error}</p>
-			<button onclick={loadBeds}>Reintentar</button>
+			<button onclick={loadData}>Reintentar</button>
 		</div>
 	{:else if loading && beds.length === 0}
 		<p class="loading">Cargando camas...</p>
 	{:else if beds.length === 0}
 		<p class="empty">No hay camas registradas</p>
 	{:else}
-		<div class="beds-grid">
-			{#each beds as bed (bed.id)}
-				<BedCard {bed} onclick={() => handleBedClick(bed)} />
-			{/each}
-		</div>
+		<!-- Mobile Ward Selector (Dropdown) -->
+		{#if wards.length > 0}
+			<div class="ward-selector-mobile">
+				<label for="ward-select">Sala:</label>
+				<select id="ward-select" value={selectedWardId} onchange={(e) => selectWard(Number(e.currentTarget.value))}>
+					{#each wards as ward}
+						<option value={ward.id}>{ward.name}</option>
+					{/each}
+				</select>
+			</div>
+
+			<!-- Desktop Ward Selector (Tabs) -->
+			<div class="ward-selector-desktop">
+				{#each wards as ward}
+					<button
+						class="ward-tab {selectedWardId === ward.id ? 'active' : ''}"
+						onclick={() => selectWard(ward.id)}
+					>
+						{ward.name}
+					</button>
+				{/each}
+			</div>
+		{/if}
+
+		{#if filteredBeds.length === 0}
+			<p class="empty">No hay camas en esta sala</p>
+		{:else}
+			<div class="beds-grid">
+				{#each filteredBeds as bed (bed.id)}
+					<BedCard {bed} onclick={() => handleBedClick(bed)} />
+				{/each}
+			</div>
+		{/if}
 	{/if}
 </div>
 
 <style>
 	.dashboard {
 		background: var(--surface);
-		border-radius: var(--border-radius-lg); /* Slightly smaller on mobile */
-		padding: 1rem; /* Reduced padding for mobile */
+		border-radius: var(--border-radius-lg);
+		padding: 1rem;
 		box-shadow: var(--shadow-md);
 	}
 
 	.header {
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem; /* Reduced gap */
-		margin-bottom: 1.5rem; /* Reduced margin */
+		gap: 0.75rem;
+		margin-bottom: 1.5rem;
 	}
 
 	h2 {
 		margin: 0;
 		color: var(--secondary);
-		font-size: 1.25rem; /* Reduced for mobile */
+		font-size: 1.25rem;
 	}
 
 	.header-actions {
@@ -145,24 +199,64 @@
 		color: var(--primary);
 	}
 
+	/* Mobile ward selector (default) */
+	.ward-selector-mobile {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-bottom: 1.25rem;
+		background: #f8fafc;
+		padding: 0.75rem 1rem;
+		border-radius: var(--border-radius-md);
+		border: 1px solid var(--border-color);
+	}
+
+	.ward-selector-mobile label {
+		font-weight: 600;
+		color: var(--secondary);
+		font-size: 0.875rem;
+	}
+
+	.ward-selector-mobile select {
+		flex: 1;
+		padding: 0.5rem;
+		border-radius: var(--border-radius-sm);
+		border: 1px solid var(--border-color);
+		background: white;
+		font-family: inherit;
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--text-main);
+	}
+
+	.ward-selector-mobile select:focus {
+		outline: none;
+		border-color: var(--primary);
+	}
+
+	/* Desktop ward selector (hidden by default) */
+	.ward-selector-desktop {
+		display: none;
+	}
+
 	.beds-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); /* Smaller minimum width for mobile */
-		gap: 0.75rem; /* Reduced gap for mobile */
+		grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+		gap: 0.75rem;
 	}
 
 	.loading, .empty {
 		text-align: center;
 		color: var(--text-muted);
-		padding: 2rem 1rem; /* Reduced padding */
-		font-size: 0.9375rem; /* Reduced font size */
+		padding: 2rem 1rem;
+		font-size: 0.9375rem;
 	}
 
 	.error {
 		background: var(--danger-bg);
 		border: 1px solid rgba(239, 68, 68, 0.3);
 		border-radius: var(--border-radius-md);
-		padding: 1rem; /* Reduced padding */
+		padding: 1rem;
 		text-align: center;
 		color: var(--danger);
 		font-size: 0.9375rem;
@@ -181,7 +275,7 @@
 	}
 	
 	.error button:hover {
-		background: #dc2626; /* darker red */
+		background: #dc2626;
 	}
 
 	@media (min-width: 640px) {
@@ -208,8 +302,41 @@
 		h2 {
 			font-size: 1.5rem;
 		}
+
+		.ward-selector-mobile {
+			display: none;
+		}
+
+		.ward-selector-desktop {
+			display: flex;
+			gap: 0.5rem;
+			border-bottom: 2px solid var(--border-color);
+			margin-bottom: 1.5rem;
+		}
+
+		.ward-tab {
+			background: transparent;
+			border: none;
+			border-bottom: 3px solid transparent;
+			padding: 0.75rem 1.25rem;
+			font-size: 0.9375rem;
+			font-weight: 600;
+			color: var(--text-muted);
+			cursor: pointer;
+			transition: all 0.2s ease;
+		}
+
+		.ward-tab:hover {
+			color: var(--primary);
+		}
+
+		.ward-tab.active {
+			color: var(--primary);
+			border-bottom-color: var(--primary);
+		}
+
 		.beds-grid {
-			grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Desktop size */
+			grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 			gap: 1.25rem;
 		}
 	}
